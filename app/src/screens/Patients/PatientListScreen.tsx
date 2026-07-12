@@ -1,12 +1,17 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, FlatList, Pressable, RefreshControl } from "react-native";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { View, Text, FlatList, Pressable, RefreshControl, TextInput } from "react-native";
 import { supabase } from "../../lib/supabase";
 import type { Patient } from "../../types";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { PatientsStackParamList } from "../../navigation/PatientsStack";
 
-export default function PatientListScreen() {
+type Props = NativeStackScreenProps<PatientsStackParamList, "PatientList">;
+
+export default function PatientListScreen({ navigation }: Props) {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [query, setQuery] = useState("");
 
   const loadPatients = useCallback(async () => {
     const { data, error } = await supabase
@@ -20,13 +25,25 @@ export default function PatientListScreen() {
   }, []);
 
   useEffect(() => {
-    loadPatients();
-  }, [loadPatients]);
+    const unsubscribe = navigation.addListener("focus", loadPatients);
+    return unsubscribe;
+  }, [navigation, loadPatients]);
 
   const onRefresh = () => {
     setRefreshing(true);
     loadPatients();
   };
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return patients;
+    return patients.filter(
+      (p) =>
+        p.full_name.toLowerCase().includes(q) ||
+        p.mrn.toLowerCase().includes(q) ||
+        (p.cancer_type ?? "").toLowerCase().includes(q)
+    );
+  }, [patients, query]);
 
   if (loading) {
     return (
@@ -38,19 +55,38 @@ export default function PatientListScreen() {
 
   return (
     <View className="flex-1 bg-clinical-bg px-4 pt-4">
+      <TextInput
+        value={query}
+        onChangeText={setQuery}
+        placeholder="Search by name, MRN, or cancer type"
+        className="border border-gray-300 rounded-lg px-4 py-3 mb-3 bg-clinical-card"
+      />
+
+      <Pressable
+        onPress={() => navigation.navigate("NewPatient")}
+        className="bg-clinical-primary rounded-lg py-3 items-center mb-4"
+      >
+        <Text className="text-white font-medium">+ New Patient</Text>
+      </Pressable>
+
       <FlatList
-        data={patients}
+        data={filtered}
         keyExtractor={(item) => item.id}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListEmptyComponent={
           <View className="items-center mt-16">
             <Text className="text-gray-400 text-center">
-              No patients yet. Tap "+ New Patient" to create the first record.
+              {patients.length === 0
+                ? 'No patients yet. Tap "+ New Patient" to create the first record.'
+                : "No patients match your search."}
             </Text>
           </View>
         }
         renderItem={({ item }) => (
-          <Pressable className="bg-clinical-card rounded-xl p-4 mb-3 border border-gray-100">
+          <Pressable
+            onPress={() => navigation.navigate("PatientDetail", { patientId: item.id })}
+            className="bg-clinical-card rounded-xl p-4 mb-3 border border-gray-100"
+          >
             <Text className="text-base font-medium text-clinical-primary">
               {item.full_name}
             </Text>

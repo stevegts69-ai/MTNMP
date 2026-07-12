@@ -1,6 +1,6 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import PatientListScreen from "../screens/Patients/PatientListScreen";
+import PatientsStack from "./PatientsStack";
 import ImagingScreen from "../screens/Imaging/ImagingScreen";
 import MetabolicScreen from "../screens/Metabolic/MetabolicScreen";
 import TreatmentScreen from "../screens/Treatment/TreatmentScreen";
@@ -20,16 +20,16 @@ export default function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
-        headerTitleStyle: { fontWeight: "600" },
+        headerShown: false,
         tabBarActiveTintColor: "#1E3A5F",
         tabBarInactiveTintColor: "#9CA3AF",
       }}
     >
-      <Tab.Screen name="Patients" component={PatientListScreen} />
-      <Tab.Screen name="Imaging" component={ImagingScreen} />
-      <Tab.Screen name="Metabolic" component={MetabolicScreen} options={{ title: "Metabolic" }} />
-      <Tab.Screen name="Treatment" component={TreatmentScreen} />
-      <Tab.Screen name="Monitoring" component={MonitoringScreen} />
+      <Tab.Screen name="Patients" component={PatientsStack} />
+      <Tab.Screen name="Imaging" component={ImagingScreen} options={{ headerShown: true }} />
+      <Tab.Screen name="Metabolic" component={MetabolicScreen} options={{ headerShown: true, title: "Metabolic" }} />
+      <Tab.Screen name="Treatment" component={TreatmentScreen} options={{ headerShown: true }} />
+      <Tab.Screen name="Monitoring" component={MonitoringScreen} options={{ headerShown: true }} />
     </Tab.Navigator>
   );
 }
