@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, ActivityIndicator, ScrollView } from "react-native";
+import { View, Text, ActivityIndicator, ScrollView, Pressable } from "react-native";
 import { supabase } from "../../lib/supabase";
 import type { Patient } from "../../types";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -7,7 +7,7 @@ import type { PatientsStackParamList } from "../../navigation/PatientsStack";
 
 type Props = NativeStackScreenProps<PatientsStackParamList, "PatientDetail">;
 
-export default function PatientDetailScreen({ route }: Props) {
+export default function PatientDetailScreen({ route, navigation }: Props) {
   const { patientId } = route.params;
   const [patient, setPatient] = useState<Patient | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,12 +61,15 @@ export default function PatientDetailScreen({ route }: Props) {
       <InfoRow label="Cancer Stage" value={patient.cancer_stage ?? "—"} />
       <InfoRow label="Record Created" value={new Date(patient.created_at).toLocaleDateString()} />
 
-      <View className="mt-8 p-4 bg-clinical-card rounded-xl border border-gray-100">
-        <Text className="text-xs text-gray-400 text-center">
-          Imaging, metabolic, and treatment records for this patient will appear
-          here as those modules are built (Days 3–6).
+      <Pressable
+        onPress={() => navigation.navigate("PatientImaging", { patientId: patient.id })}
+        className="mt-8 p-4 bg-clinical-card rounded-xl border border-gray-100"
+      >
+        <Text className="text-clinical-primary font-medium text-center">View Imaging</Text>
+        <Text className="text-xs text-gray-400 text-center mt-1">
+          Metabolic and treatment records will appear here as those modules are built (Days 4–6).
         </Text>
-      </View>
+      </Pressable>
     </ScrollView>
   );
 }
