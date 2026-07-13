@@ -75,9 +75,12 @@ export default function PatientDetailScreen({ route, navigation }: Props) {
         <Text className="text-clinical-primary font-medium text-center">Metabolic Monitoring</Text>
       </Pressable>
 
-      <Text className="text-xs text-gray-400 text-center mt-4 mb-8">
-        Treatment records will appear here as that module is built (Days 5–6).
-      </Text>
+      <Pressable
+        onPress={() => navigation.navigate("PatientTreatment", { patientId: patient.id })}
+        className="mt-3 p-4 bg-clinical-card rounded-xl border border-gray-100 mb-8"
+      >
+        <Text className="text-clinical-primary font-medium text-center">Treatment Log</Text>
+      </Pressable>
     </ScrollView>
   );
 }
