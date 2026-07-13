@@ -1,10 +1,10 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import PatientsStack from "./PatientsStack";
+import MonitoringStack from "./MonitoringStack";
 import ImagingScreen from "../screens/Imaging/ImagingScreen";
 import MetabolicScreen from "../screens/Metabolic/MetabolicScreen";
 import TreatmentScreen from "../screens/Treatment/TreatmentScreen";
-import MonitoringScreen from "../screens/Monitoring/MonitoringScreen";
 
 export type MainTabParamList = {
   Patients: undefined;
@@ -29,7 +29,7 @@ export default function MainTabs() {
       <Tab.Screen name="Imaging" component={ImagingScreen} options={{ headerShown: true }} />
       <Tab.Screen name="Metabolic" component={MetabolicScreen} options={{ headerShown: true, title: "Metabolic" }} />
       <Tab.Screen name="Treatment" component={TreatmentScreen} options={{ headerShown: true }} />
-      <Tab.Screen name="Monitoring" component={MonitoringScreen} options={{ headerShown: true }} />
+      <Tab.Screen name="Monitoring" component={MonitoringStack} />
     </Tab.Navigator>
   );
 }
