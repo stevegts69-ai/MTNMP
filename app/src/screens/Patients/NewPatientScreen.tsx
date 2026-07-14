@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "../../store/authStore";
+import { logAudit } from "../../lib/audit";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { PatientsStackParamList } from "../../navigation/PatientsStack";
 
@@ -60,19 +61,24 @@ export default function NewPatientScreen({ navigation }: Props) {
     }
 
     setSubmitting(true);
-    const { error: insertError } = await supabase.from("patients").insert({
-      institution_id: profile.institution_id,
-      mrn: mrn.trim(),
-      full_name: fullName.trim(),
-      date_of_birth: dateOfBirth.trim() || null,
-      sex: sex || null,
-      cancer_type: cancerType.trim() || null,
-      cancer_stage: cancerStage.trim() || null,
-      created_by: profile.id,
-    });
+    const { data: inserted, error: insertError } = await supabase
+      .from("patients")
+      .insert({
+        institution_id: profile.institution_id,
+        mrn: mrn.trim(),
+        full_name: fullName.trim(),
+        date_of_birth: dateOfBirth.trim() || null,
+        sex: sex || null,
+        cancer_type: cancerType.trim() || null,
+        cancer_stage: cancerStage.trim() || null,
+        created_by: profile.id,
+      })
+      .select()
+      .single();
     setSubmitting(false);
 
     if (insertError) {
+      // Postgres unique_violation on (institution_id, mrn)
       if (insertError.code === "23505") {
         setError("A patient with this MRN already exists at your institution.");
       } else {
@@ -80,6 +86,14 @@ export default function NewPatientScreen({ navigation }: Props) {
       }
       return;
     }
+
+    await logAudit({
+      userId: profile.id,
+      institutionId: profile.institution_id,
+      action: "create",
+      tableName: "patients",
+      recordId: inserted?.id,
+    });
 
     Alert.alert("Patient created", `${fullName.trim()} has been added.`);
     navigation.goBack();

@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "../../store/authStore";
+import { logAudit } from "../../lib/audit";
 import type { IsotopeType, DoseUnit } from "../../types";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { PatientsStackParamList } from "../../navigation/PatientsStack";
@@ -65,24 +66,36 @@ export default function NewTreatmentLogScreen({ route, navigation }: Props) {
     if (!profile?.institution_id) return;
 
     setSubmitting(true);
-    const { error: insertError } = await supabase.from("treatment_logs").insert({
-      patient_id: patientId,
-      institution_id: profile.institution_id,
-      isotope,
-      target_receptor_or_tissue: targetTissue.trim() || null,
-      dose_administered: doseAdministered.trim() ? parseFloat(doseAdministered) : null,
-      dose_unit: doseAdministered.trim() ? doseUnit : null,
-      dosimetry_source: dosimetrySource.trim() || null,
-      administered_date: administeredDate.trim() || null,
-      administered_by: profile.id,
-      notes: notes.trim() || null,
-    });
+    const { data: inserted, error: insertError } = await supabase
+      .from("treatment_logs")
+      .insert({
+        patient_id: patientId,
+        institution_id: profile.institution_id,
+        isotope,
+        target_receptor_or_tissue: targetTissue.trim() || null,
+        dose_administered: doseAdministered.trim() ? parseFloat(doseAdministered) : null,
+        dose_unit: doseAdministered.trim() ? doseUnit : null,
+        dosimetry_source: dosimetrySource.trim() || null,
+        administered_date: administeredDate.trim() || null,
+        administered_by: profile.id,
+        notes: notes.trim() || null,
+      })
+      .select()
+      .single();
     setSubmitting(false);
 
     if (insertError) {
       setError(insertError.message);
       return;
     }
+
+    await logAudit({
+      userId: profile.id,
+      institutionId: profile.institution_id,
+      action: "create",
+      tableName: "treatment_logs",
+      recordId: inserted?.id,
+    });
 
     Alert.alert("Treatment logged", "The treatment record has been saved.");
     navigation.goBack();

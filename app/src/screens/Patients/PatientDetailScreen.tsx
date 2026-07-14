@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator, ScrollView, Pressable } from "react-native";
 import { supabase } from "../../lib/supabase";
+import { useAuthStore } from "../../store/authStore";
+import { logAudit } from "../../lib/audit";
 import type { Patient } from "../../types";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { PatientsStackParamList } from "../../navigation/PatientsStack";
@@ -9,6 +11,7 @@ type Props = NativeStackScreenProps<PatientsStackParamList, "PatientDetail">;
 
 export default function PatientDetailScreen({ route, navigation }: Props) {
   const { patientId } = route.params;
+  const profile = useAuthStore((s) => s.profile);
   const [patient, setPatient] = useState<Patient | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,6 +32,20 @@ export default function PatientDetailScreen({ route, navigation }: Props) {
       setLoading(false);
     })();
   }, [patientId]);
+
+  // Log a "view" event once per screen visit — this is the core clinical
+  // audit trail entry: who looked at which patient record, and when.
+  useEffect(() => {
+    if (profile) {
+      logAudit({
+        userId: profile.id,
+        institutionId: profile.institution_id,
+        action: "view",
+        tableName: "patients",
+        recordId: patientId,
+      });
+    }
+  }, [profile, patientId]);
 
   if (loading) {
     return (

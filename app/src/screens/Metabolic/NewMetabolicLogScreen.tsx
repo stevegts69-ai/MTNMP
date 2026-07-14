@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "../../store/authStore";
+import { logAudit } from "../../lib/audit";
 import { computeKetosisZone, ZONE_COLORS, ZONE_LABELS } from "../../lib/ketosis";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { PatientsStackParamList } from "../../navigation/PatientsStack";
@@ -56,20 +57,32 @@ export default function NewMetabolicLogScreen({ route, navigation }: Props) {
     if (!profile?.institution_id) return;
 
     setSubmitting(true);
-    const { error: insertError } = await supabase.from("metabolic_logs").insert({
-      patient_id: patientId,
-      institution_id: profile.institution_id,
-      glucose_mmol_l: glucoseNum,
-      ketones_mmol_l: ketonesNum,
-      ketosis_zone: previewZone,
-      logged_by: profile.id,
-    });
+    const { data: inserted, error: insertError } = await supabase
+      .from("metabolic_logs")
+      .insert({
+        patient_id: patientId,
+        institution_id: profile.institution_id,
+        glucose_mmol_l: glucoseNum,
+        ketones_mmol_l: ketonesNum,
+        ketosis_zone: previewZone,
+        logged_by: profile.id,
+      })
+      .select()
+      .single();
     setSubmitting(false);
 
     if (insertError) {
       setError(insertError.message);
       return;
     }
+
+    await logAudit({
+      userId: profile.id,
+      institutionId: profile.institution_id,
+      action: "create",
+      tableName: "metabolic_logs",
+      recordId: inserted?.id,
+    });
 
     Alert.alert("Reading logged", "The metabolic reading has been saved.");
     navigation.goBack();

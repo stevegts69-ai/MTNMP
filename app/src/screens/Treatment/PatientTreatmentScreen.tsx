@@ -56,7 +56,10 @@ export default function PatientTreatmentScreen({ route, navigation }: Props) {
           </View>
         }
         renderItem={({ item }) => (
-          <View className="bg-clinical-card rounded-xl p-4 mb-3 border border-gray-100">
+          <Pressable
+            onPress={() => navigation.navigate("TreatmentLogDetail", { treatmentLogId: item.id })}
+            className="bg-clinical-card rounded-xl p-4 mb-3 border border-gray-100"
+          >
             <View className="flex-row justify-between items-start">
               <Text className="text-base font-medium text-clinical-primary">{item.isotope}</Text>
               {item.administered_date ? (
@@ -79,7 +82,7 @@ export default function PatientTreatmentScreen({ route, navigation }: Props) {
             {item.notes ? (
               <Text className="text-xs text-gray-500 mt-2">{item.notes}</Text>
             ) : null}
-          </View>
+          </Pressable>
         )}
       />
     </View>

@@ -15,6 +15,7 @@ import * as FileSystem from "expo-file-system/legacy";
 import { decode } from "base64-arraybuffer";
 import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "../../store/authStore";
+import { logAudit } from "../../lib/audit";
 import type { ScanType, FileType } from "../../types";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { PatientsStackParamList } from "../../navigation/PatientsStack";
@@ -55,9 +56,9 @@ export default function NewImagingScreen({ route, navigation }: Props) {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-  mediaTypes: ["images"],
-  quality: 0.9,
-});
+      mediaTypes: ["images"],
+      quality: 0.9,
+    });
     if (result.canceled || !result.assets?.[0]) return;
 
     const asset = result.assets[0];
@@ -73,11 +74,9 @@ export default function NewImagingScreen({ route, navigation }: Props) {
 
   const pickDocument = async () => {
     const result = await DocumentPicker.getDocumentAsync({
-  type: "*/*",
-  copyToCacheDirectory: true,
-});
-  
-
+      type: "*/*",
+      copyToCacheDirectory: true,
+    });
     if (result.canceled || !result.assets?.[0]) return;
 
     const asset = result.assets[0];
@@ -125,18 +124,30 @@ export default function NewImagingScreen({ route, navigation }: Props) {
 
       if (uploadError) throw uploadError;
 
-      const { error: insertError } = await supabase.from("imaging_records").insert({
-        patient_id: patientId,
-        institution_id: profile.institution_id,
-        scan_type: scanType,
-        storage_path: storagePath,
-        file_type: picked.fileType,
-        scan_date: scanDate.trim() || null,
-        notes: notes.trim() || null,
-        uploaded_by: profile.id,
-      });
+      const { data: inserted, error: insertError } = await supabase
+        .from("imaging_records")
+        .insert({
+          patient_id: patientId,
+          institution_id: profile.institution_id,
+          scan_type: scanType,
+          storage_path: storagePath,
+          file_type: picked.fileType,
+          scan_date: scanDate.trim() || null,
+          notes: notes.trim() || null,
+          uploaded_by: profile.id,
+        })
+        .select()
+        .single();
 
       if (insertError) throw insertError;
+
+      await logAudit({
+        userId: profile.id,
+        institutionId: profile.institution_id,
+        action: "create",
+        tableName: "imaging_records",
+        recordId: inserted?.id,
+      });
 
       Alert.alert("Scan uploaded", "The imaging record has been saved.");
       navigation.goBack();

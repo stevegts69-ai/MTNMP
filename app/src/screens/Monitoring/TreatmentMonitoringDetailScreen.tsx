@@ -12,6 +12,8 @@ import {
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { supabase } from "../../lib/supabase";
+import { useAuthStore } from "../../store/authStore";
+import { logAudit } from "../../lib/audit";
 import type { TreatmentLog, ImagingRecord } from "../../types";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { MonitoringStackParamList } from "../../navigation/MonitoringStack";
@@ -30,6 +32,7 @@ interface MonitoringRow {
 
 export default function TreatmentMonitoringDetailScreen({ route }: Props) {
   const { treatmentLogId, patientId } = route.params;
+  const profile = useAuthStore((s) => s.profile);
 
   const [treatmentLog, setTreatmentLog] = useState<TreatmentLog | null>(null);
   const [monitoringId, setMonitoringId] = useState<string | null>(null);
@@ -127,6 +130,16 @@ export default function TreatmentMonitoringDetailScreen({ route }: Props) {
       return;
     }
     if (data && !monitoringId) setMonitoringId((data as MonitoringRow).id);
+
+    if (profile) {
+      await logAudit({
+        userId: profile.id,
+        institutionId: profile.institution_id,
+        action: monitoringId ? "update" : "create",
+        tableName: "treatment_monitoring",
+        recordId: data?.id ?? monitoringId,
+      });
+    }
     Alert.alert("Saved", "Monitoring information has been updated.");
   };
 

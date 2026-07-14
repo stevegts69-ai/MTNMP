@@ -9,6 +9,8 @@ import PatientMetabolicScreen from "../screens/Metabolic/PatientMetabolicScreen"
 import NewMetabolicLogScreen from "../screens/Metabolic/NewMetabolicLogScreen";
 import PatientTreatmentScreen from "../screens/Treatment/PatientTreatmentScreen";
 import NewTreatmentLogScreen from "../screens/Treatment/NewTreatmentLogScreen";
+import TreatmentLogDetailScreen from "../screens/Treatment/TreatmentLogDetailScreen";
+import NewOrganDoseScreen from "../screens/Treatment/NewOrganDoseScreen";
 
 export type PatientsStackParamList = {
   PatientList: undefined;
@@ -20,6 +22,8 @@ export type PatientsStackParamList = {
   NewMetabolicLog: { patientId: string };
   PatientTreatment: { patientId: string };
   NewTreatmentLog: { patientId: string };
+  TreatmentLogDetail: { treatmentLogId: string };
+  NewOrganDose: { treatmentLogId: string };
 };
 
 const Stack = createNativeStackNavigator<PatientsStackParamList>();
@@ -36,6 +40,8 @@ export default function PatientsStack() {
       <Stack.Screen name="NewMetabolicLog" component={NewMetabolicLogScreen} options={{ title: "Log Reading" }} />
       <Stack.Screen name="PatientTreatment" component={PatientTreatmentScreen} options={{ title: "Treatment Log" }} />
       <Stack.Screen name="NewTreatmentLog" component={NewTreatmentLogScreen} options={{ title: "Log Treatment" }} />
+      <Stack.Screen name="TreatmentLogDetail" component={TreatmentLogDetailScreen} options={{ title: "Treatment Detail" }} />
+      <Stack.Screen name="NewOrganDose" component={NewOrganDoseScreen} options={{ title: "Log Organ Dose" }} />
     </Stack.Navigator>
   );
 }
