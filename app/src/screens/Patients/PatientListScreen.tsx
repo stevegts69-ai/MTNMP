@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { View, Text, FlatList, Pressable, RefreshControl, TextInput } from "react-native";
+import { View, Text, FlatList, Pressable, RefreshControl, TextInput, Alert } from "react-native";
 import { supabase } from "../../lib/supabase";
+import { useAuthStore } from "../../store/authStore";
 import type { Patient } from "../../types";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { PatientsStackParamList } from "../../navigation/PatientsStack";
@@ -8,10 +9,29 @@ import type { PatientsStackParamList } from "../../navigation/PatientsStack";
 type Props = NativeStackScreenProps<PatientsStackParamList, "PatientList">;
 
 export default function PatientListScreen({ navigation }: Props) {
+  const signOut = useAuthStore((s) => s.signOut);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState("");
+
+  const handleSignOut = () => {
+    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Sign Out", style: "destructive", onPress: () => signOut() },
+    ]);
+  };
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Pressable onPress={handleSignOut} className="pr-1">
+          <Text className="text-clinical-primary text-sm">Sign Out</Text>
+        </Pressable>
+      ),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigation]);
 
   const loadPatients = useCallback(async () => {
     const { data, error } = await supabase
