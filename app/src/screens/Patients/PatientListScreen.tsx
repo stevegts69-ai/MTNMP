@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { View, Text, FlatList, Pressable, RefreshControl, TextInput, Alert } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "../../store/authStore";
 import type { Patient } from "../../types";
@@ -8,12 +9,15 @@ import type { PatientsStackParamList } from "../../navigation/PatientsStack";
 
 type Props = NativeStackScreenProps<PatientsStackParamList, "PatientList">;
 
+const PATIENTS_CACHE_KEY = "cached_patients_list";
+
 export default function PatientListScreen({ navigation }: Props) {
   const signOut = useAuthStore((s) => s.signOut);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState("");
+  const [isOffline, setIsOffline] = useState(false);
 
   const handleSignOut = () => {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
@@ -39,7 +43,24 @@ export default function PatientListScreen({ navigation }: Props) {
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (!error && data) setPatients(data as Patient[]);
+    if (!error && data) {
+      setPatients(data as Patient[]);
+      setIsOffline(false);
+      // Best-effort cache write — failure here shouldn't affect the live view.
+      AsyncStorage.setItem(PATIENTS_CACHE_KEY, JSON.stringify(data)).catch(() => {});
+    } else {
+      // Fetch failed — most likely no connectivity. Fall back to whatever
+      // we last successfully cached, so the list isn't just blank offline.
+      try {
+        const cached = await AsyncStorage.getItem(PATIENTS_CACHE_KEY);
+        if (cached) {
+          setPatients(JSON.parse(cached) as Patient[]);
+          setIsOffline(true);
+        }
+      } catch {
+        // No cache available either — patients stays as whatever it was.
+      }
+    }
     setLoading(false);
     setRefreshing(false);
   }, []);
@@ -75,6 +96,14 @@ export default function PatientListScreen({ navigation }: Props) {
 
   return (
     <View className="flex-1 bg-clinical-bg px-4 pt-4">
+      {isOffline ? (
+        <View className="bg-clinical-warn/10 border border-clinical-warn rounded-lg px-3 py-2 mb-3">
+          <Text className="text-xs text-clinical-warn text-center">
+            Offline — showing last cached patient list
+          </Text>
+        </View>
+      ) : null}
+
       <TextInput
         value={query}
         onChangeText={setQuery}

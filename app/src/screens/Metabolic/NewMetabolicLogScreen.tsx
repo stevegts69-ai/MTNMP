@@ -11,6 +11,8 @@ import {
 import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "../../store/authStore";
 import { logAudit } from "../../lib/audit";
+import { useOfflineQueueStore } from "../../store/offlineQueueStore";
+import NetInfo from "@react-native-community/netinfo";
 import { computeKetosisZone, ZONE_COLORS, ZONE_LABELS } from "../../lib/ketosis";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { PatientsStackParamList } from "../../navigation/PatientsStack";
@@ -20,6 +22,7 @@ type Props = NativeStackScreenProps<PatientsStackParamList, "NewMetabolicLog">;
 export default function NewMetabolicLogScreen({ route, navigation }: Props) {
   const { patientId } = route.params;
   const profile = useAuthStore((s) => s.profile);
+  const enqueue = useOfflineQueueStore((s) => s.enqueue);
 
   const [glucose, setGlucose] = useState("");
   const [ketones, setKetones] = useState("");
@@ -56,17 +59,32 @@ export default function NewMetabolicLogScreen({ route, navigation }: Props) {
     }
     if (!profile?.institution_id) return;
 
+    const netState = await NetInfo.fetch();
+    const isOnline = netState.isConnected && netState.isInternetReachable !== false;
+
+    const payload = {
+      patient_id: patientId,
+      institution_id: profile.institution_id,
+      glucose_mmol_l: glucoseNum,
+      ketones_mmol_l: ketonesNum,
+      ketosis_zone: previewZone,
+      logged_by: profile.id,
+    };
+
+    if (!isOnline) {
+      enqueue("metabolic_logs", payload);
+      Alert.alert(
+        "Saved offline",
+        "This reading will sync automatically once you're back online."
+      );
+      navigation.goBack();
+      return;
+    }
+
     setSubmitting(true);
     const { data: inserted, error: insertError } = await supabase
       .from("metabolic_logs")
-      .insert({
-        patient_id: patientId,
-        institution_id: profile.institution_id,
-        glucose_mmol_l: glucoseNum,
-        ketones_mmol_l: ketonesNum,
-        ketosis_zone: previewZone,
-        logged_by: profile.id,
-      })
+      .insert(payload)
       .select()
       .single();
     setSubmitting(false);

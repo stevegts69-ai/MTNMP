@@ -1,10 +1,12 @@
 import React from "react";
+import { View } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import PatientsStack from "./PatientsStack";
 import MonitoringStack from "./MonitoringStack";
 import ImagingScreen from "../screens/Imaging/ImagingScreen";
 import MetabolicScreen from "../screens/Metabolic/MetabolicScreen";
 import TreatmentScreen from "../screens/Treatment/TreatmentScreen";
+import SyncStatusBanner from "../components/SyncStatusBanner";
 
 export type MainTabParamList = {
   Patients: undefined;
@@ -18,18 +20,21 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export default function MainTabs() {
   return (
-    <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: "#1E3A5F",
-        tabBarInactiveTintColor: "#9CA3AF",
-      }}
-    >
-      <Tab.Screen name="Patients" component={PatientsStack} />
-      <Tab.Screen name="Imaging" component={ImagingScreen} options={{ headerShown: true }} />
-      <Tab.Screen name="Metabolic" component={MetabolicScreen} options={{ headerShown: true, title: "Metabolic" }} />
-      <Tab.Screen name="Treatment" component={TreatmentScreen} options={{ headerShown: true }} />
-      <Tab.Screen name="Monitoring" component={MonitoringStack} />
-    </Tab.Navigator>
+    <View style={{ flex: 1 }}>
+      <SyncStatusBanner />
+      <Tab.Navigator
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: "#1E3A5F",
+          tabBarInactiveTintColor: "#9CA3AF",
+        }}
+      >
+        <Tab.Screen name="Patients" component={PatientsStack} />
+        <Tab.Screen name="Imaging" component={ImagingScreen} options={{ headerShown: true }} />
+        <Tab.Screen name="Metabolic" component={MetabolicScreen} options={{ headerShown: true, title: "Metabolic" }} />
+        <Tab.Screen name="Treatment" component={TreatmentScreen} options={{ headerShown: true }} />
+        <Tab.Screen name="Monitoring" component={MonitoringStack} />
+      </Tab.Navigator>
+    </View>
   );
 }

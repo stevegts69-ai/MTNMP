@@ -11,6 +11,8 @@ import {
 import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "../../store/authStore";
 import { logAudit } from "../../lib/audit";
+import { useOfflineQueueStore } from "../../store/offlineQueueStore";
+import NetInfo from "@react-native-community/netinfo";
 import type { IsotopeType, DoseUnit } from "../../types";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { PatientsStackParamList } from "../../navigation/PatientsStack";
@@ -23,6 +25,7 @@ const DOSE_UNITS: DoseUnit[] = ["mCi", "GBq"];
 export default function NewTreatmentLogScreen({ route, navigation }: Props) {
   const { patientId } = route.params;
   const profile = useAuthStore((s) => s.profile);
+  const enqueue = useOfflineQueueStore((s) => s.enqueue);
 
   const [isotope, setIsotope] = useState<IsotopeType>("Lu177");
   const [targetTissue, setTargetTissue] = useState("");
@@ -65,21 +68,36 @@ export default function NewTreatmentLogScreen({ route, navigation }: Props) {
     }
     if (!profile?.institution_id) return;
 
+    const netState = await NetInfo.fetch();
+    const isOnline = netState.isConnected && netState.isInternetReachable !== false;
+
+    const payload = {
+      patient_id: patientId,
+      institution_id: profile.institution_id,
+      isotope,
+      target_receptor_or_tissue: targetTissue.trim() || null,
+      dose_administered: doseAdministered.trim() ? parseFloat(doseAdministered) : null,
+      dose_unit: doseAdministered.trim() ? doseUnit : null,
+      dosimetry_source: dosimetrySource.trim() || null,
+      administered_date: administeredDate.trim() || null,
+      administered_by: profile.id,
+      notes: notes.trim() || null,
+    };
+
+    if (!isOnline) {
+      enqueue("treatment_logs", payload);
+      Alert.alert(
+        "Saved offline",
+        "This treatment record will sync automatically once you're back online."
+      );
+      navigation.goBack();
+      return;
+    }
+
     setSubmitting(true);
     const { data: inserted, error: insertError } = await supabase
       .from("treatment_logs")
-      .insert({
-        patient_id: patientId,
-        institution_id: profile.institution_id,
-        isotope,
-        target_receptor_or_tissue: targetTissue.trim() || null,
-        dose_administered: doseAdministered.trim() ? parseFloat(doseAdministered) : null,
-        dose_unit: doseAdministered.trim() ? doseUnit : null,
-        dosimetry_source: dosimetrySource.trim() || null,
-        administered_date: administeredDate.trim() || null,
-        administered_by: profile.id,
-        notes: notes.trim() || null,
-      })
+      .insert(payload)
       .select()
       .single();
     setSubmitting(false);
