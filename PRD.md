@@ -191,3 +191,35 @@ These features are explicitly out of scope for the current build (Section 5) and
 **Supplier partnerships (commission/revenue-share):**
 - **Isotope suppliers** (e.g., Lu-177, Y-90 distributors) — commission-based revenue share on sales referred through institutional relationships. **Guardrail:** any such partnership must not influence which isotopes are presented, defaulted to, or made easier to select in the Treatment Log — the app's "no treatment recommendation" positioning (Section 1.2) has to hold regardless of which suppliers are commercial partners.
 - **Metabolic monitoring kit suppliers** (glucose/ketone meter manufacturers) — referral or revenue-share partnerships, lower stakes than isotope partnerships since these don't touch treatment decisions.
+
+---
+
+## 10. Concrete Next Steps Post-MVP
+
+Two gaps surfaced during Day 10 testing that are worth tracking as scoped, buildable next features — distinct from the more speculative Phase 2/3 items in Section 9, these are near-term and well-understood:
+
+### 10.1 EAS Update (OTA JS updates)
+Currently, **every** change — even a pure JavaScript/UI fix with no native code involved — requires a full EAS rebuild and reinstall on test devices. Native changes (new dependencies, permissions, icons, `app.json` config) will always require a rebuild on any platform; that's not fixable. But pure-logic/UI changes don't need to. Setting up `expo-updates` (EAS Update) would let already-installed apps fetch and apply JS-only changes on next launch, without a full rebuild — meaningfully speeding up iteration once real hospital feedback starts coming in. Not done in the MVP build; worth prioritizing early post-MVP.
+
+### 10.2 Admin account approval screen
+The `credential_verified` field and its enforcement (unverified accounts can view but not write, blocked at the database level) is fully built and tested. What's missing is a UI for the approval step itself — currently, granting a new doctor access requires manually creating their Auth user and running a SQL insert against `profiles` with `credential_verified: true`. This is acceptable for a small, personally-vetted pilot (a handful of doctors at 1-2 hospitals), but not something to hand to a hospital IT department at any real scale.
+
+**Scoped next feature:** an Admin-role screen listing pending/unverified accounts at their institution, with a "Verify" action that updates `credential_verified` directly in-app. The app still would not verify medical licenses itself — that stays a human judgment call by the admin, based on their own institutional process — this feature only replaces the manual SQL step with a proper in-app workflow.
+
+---
+
+## 11. Scaling Considerations (future — not an MVP concern)
+
+The current architecture (React Native + Expo, Supabase/Postgres with RLS) does not need to be rearchitected to reach large scale — this is a legitimate, proven foundation. The items below are real inflection points worth planning for deliberately as the user base grows, not urgent MVP work.
+
+### 11.1 Cost categories that grow with scale
+- **Database compute/storage:** Supabase pricing scales with database size, concurrent connections, and bandwidth — a gradual, predictable path (Free → Pro → Team → Enterprise), not a sudden cliff.
+- **Imaging storage:** grows faster than expected even without DICOM rendering, since medical images accumulate quickly in aggregate. Worth establishing a data retention/archival policy (e.g., cold storage for older scans) before volume makes this expensive to retrofit.
+- **Query performance at high row counts:** tables like `audit_logs` and `metabolic_logs` will reach very high row counts over years at scale. Existing indexed RLS lookups hold up well initially; at extreme volume, **table partitioning** (e.g., partitioning `audit_logs` by month) is the standard, well-understood Postgres solution — not a rearchitecture.
+
+### 11.2 Data residency / multi-region — the one to plan for earliest
+Supabase currently has no African region (see earlier region-selection discussion); the nearest option (Frankfurt/EU) is a minor latency inconvenience at pilot scale. At multi-country scale, this becomes a **regulatory** issue, not just a performance one — some countries' health data laws require patient data to remain within national borders. This is inexpensive to design for now (e.g., architecting the schema/infra to support per-region deployment later) and expensive to retrofit after the fact. Worth a deliberate early decision, even if actual multi-region deployment is years away.
+
+### 11.3 Non-technical scaling costs
+- **Regulatory complexity compounds per country, not per user.** Ten doctors in one country is one regulatory relationship; millions of doctors across many countries means many separate regulatory relationships, each with its own clearance process. This is typically the slower, harder constraint compared to the technical side of scaling.
+- **Support and customer success operations** (e.g., hospital IT issues at odd hours) are a real operational cost independent of infrastructure scaling.
