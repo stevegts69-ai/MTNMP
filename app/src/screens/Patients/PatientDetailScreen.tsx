@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator, ScrollView, Pressable } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "../../store/authStore";
 import { logAudit } from "../../lib/audit";
@@ -9,12 +10,15 @@ import type { PatientsStackParamList } from "../../navigation/PatientsStack";
 
 type Props = NativeStackScreenProps<PatientsStackParamList, "PatientDetail">;
 
+const PATIENTS_CACHE_KEY = "cached_patients_list";
+
 export default function PatientDetailScreen({ route, navigation }: Props) {
   const { patientId } = route.params;
   const profile = useAuthStore((s) => s.profile);
   const [patient, setPatient] = useState<Patient | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -24,11 +28,34 @@ export default function PatientDetailScreen({ route, navigation }: Props) {
         .eq("id", patientId)
         .single();
 
-      if (fetchError) {
-        setError(fetchError.message);
-      } else {
+      if (!fetchError && data) {
         setPatient(data as Patient);
+        setIsOffline(false);
+        setLoading(false);
+        return;
       }
+
+      // Fetch failed — most likely no connectivity. Fall back to the
+      // patient list's cache (written by PatientListScreen) rather than
+      // blocking navigation entirely, since imaging/metabolic/treatment
+      // screens beyond this one only need the patientId to function.
+      try {
+        const cached = await AsyncStorage.getItem(PATIENTS_CACHE_KEY);
+        if (cached) {
+          const cachedPatients = JSON.parse(cached) as Patient[];
+          const match = cachedPatients.find((p) => p.id === patientId);
+          if (match) {
+            setPatient(match);
+            setIsOffline(true);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch {
+        // No usable cache either — fall through to the error state below.
+      }
+
+      setError(fetchError?.message ?? "Patient not found.");
       setLoading(false);
     })();
   }, [patientId]);
@@ -67,6 +94,14 @@ export default function PatientDetailScreen({ route, navigation }: Props) {
 
   return (
     <ScrollView className="flex-1 bg-clinical-bg px-5 pt-5">
+      {isOffline ? (
+        <View className="bg-clinical-warn/10 border border-clinical-warn rounded-lg px-3 py-2 mb-4">
+          <Text className="text-xs text-clinical-warn text-center">
+            Offline — showing cached patient details
+          </Text>
+        </View>
+      ) : null}
+
       <Text className="text-xl font-semibold text-clinical-primary mb-1">
         {patient.full_name}
       </Text>

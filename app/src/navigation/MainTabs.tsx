@@ -4,24 +4,20 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import PatientsStack from "./PatientsStack";
 import MonitoringStack from "./MonitoringStack";
-import ImagingScreen from "../screens/Imaging/ImagingScreen";
-import MetabolicScreen from "../screens/Metabolic/MetabolicScreen";
-import TreatmentScreen from "../screens/Treatment/TreatmentScreen";
 import SyncStatusBanner from "../components/SyncStatusBanner";
 
+// Imaging, Metabolic, and Treatment are deliberately NOT top-level tabs —
+// that data is patient-specific, so those features live inside a patient's
+// record (Patient Detail -> View Imaging / Metabolic Monitoring / Treatment
+// Log), a decision made on Day 3. Only genuinely cross-patient views
+// (Patients list, institution-wide Monitoring dashboard) belong here.
 export type MainTabParamList = {
   Patients: undefined;
-  Imaging: undefined;
-  Metabolic: undefined;
-  Treatment: undefined;
   Monitoring: undefined;
 };
 
 const TAB_ICONS: Record<keyof MainTabParamList, keyof typeof Ionicons.glyphMap> = {
   Patients: "people-outline",
-  Imaging: "scan-outline",
-  Metabolic: "pulse-outline",
-  Treatment: "medkit-outline",
   Monitoring: "stats-chart-outline",
 };
 
@@ -46,9 +42,6 @@ export default function MainTabs() {
         })}
       >
         <Tab.Screen name="Patients" component={PatientsStack} />
-        <Tab.Screen name="Imaging" component={ImagingScreen} options={{ headerShown: true }} />
-        <Tab.Screen name="Metabolic" component={MetabolicScreen} options={{ headerShown: true, title: "Metabolic" }} />
-        <Tab.Screen name="Treatment" component={TreatmentScreen} options={{ headerShown: true }} />
         <Tab.Screen name="Monitoring" component={MonitoringStack} />
       </Tab.Navigator>
     </View>
