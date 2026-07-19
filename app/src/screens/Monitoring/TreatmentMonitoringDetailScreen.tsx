@@ -2,13 +2,13 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
-  TextInput,
   Pressable,
   Image,
   ActivityIndicator,
   ScrollView,
   Alert,
 } from "react-native";
+import AppTextInput from "../../components/AppTextInput";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { supabase } from "../../lib/supabase";
@@ -226,7 +226,7 @@ export default function TreatmentMonitoringDetailScreen({ route }: Props) {
       ) : null}
 
       <Text className="text-xs font-medium text-gray-600 mb-1 mt-4">Next Imaging Due Date</Text>
-      <TextInput
+      <AppTextInput
         value={nextImagingDate}
         onChangeText={setNextImagingDate}
         placeholder="YYYY-MM-DD"
@@ -234,7 +234,7 @@ export default function TreatmentMonitoringDetailScreen({ route }: Props) {
       />
 
       <Text className="text-xs font-medium text-gray-600 mb-1">Response Notes</Text>
-      <TextInput
+      <AppTextInput
         value={responseNotes}
         onChangeText={setResponseNotes}
         placeholder="Physician's own assessment notes"

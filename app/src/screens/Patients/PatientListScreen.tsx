@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { View, Text, FlatList, Pressable, RefreshControl, TextInput, Alert } from "react-native";
+import { View, Text, FlatList, Pressable, RefreshControl, Alert } from "react-native";
+import AppTextInput from "../../components/AppTextInput";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "../../store/authStore";
@@ -104,7 +105,7 @@ export default function PatientListScreen({ navigation }: Props) {
         </View>
       ) : null}
 
-      <TextInput
+      <AppTextInput
         value={query}
         onChangeText={setQuery}
         placeholder="Search by name, MRN, or cancer type"

@@ -2,13 +2,13 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  TextInput,
   Pressable,
   ActivityIndicator,
   ScrollView,
   Alert,
   Image,
 } from "react-native";
+import AppTextInput from "../../components/AppTextInput";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
@@ -214,7 +214,7 @@ export default function NewImagingScreen({ route, navigation }: Props) {
       </View>
 
       <Text className="text-xs font-medium text-gray-600 mb-1">Scan Date</Text>
-      <TextInput
+      <AppTextInput
         value={scanDate}
         onChangeText={setScanDate}
         placeholder="YYYY-MM-DD"
@@ -222,7 +222,7 @@ export default function NewImagingScreen({ route, navigation }: Props) {
       />
 
       <Text className="text-xs font-medium text-gray-600 mb-1">Notes</Text>
-      <TextInput
+      <AppTextInput
         value={notes}
         onChangeText={setNotes}
         placeholder="Optional"

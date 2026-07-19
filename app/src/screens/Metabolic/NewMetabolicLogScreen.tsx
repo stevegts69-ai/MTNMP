@@ -2,12 +2,12 @@ import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
-  TextInput,
   Pressable,
   ActivityIndicator,
   ScrollView,
   Alert,
 } from "react-native";
+import AppTextInput from "../../components/AppTextInput";
 import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "../../store/authStore";
 import { logAudit } from "../../lib/audit";
@@ -113,7 +113,7 @@ export default function NewMetabolicLogScreen({ route, navigation }: Props) {
       </Text>
 
       <Text className="text-xs font-medium text-gray-600 mb-1">Glucose (mmol/L)</Text>
-      <TextInput
+      <AppTextInput
         value={glucose}
         onChangeText={setGlucose}
         keyboardType="decimal-pad"
@@ -122,7 +122,7 @@ export default function NewMetabolicLogScreen({ route, navigation }: Props) {
       />
 
       <Text className="text-xs font-medium text-gray-600 mb-1">Ketones (mmol/L)</Text>
-      <TextInput
+      <AppTextInput
         value={ketones}
         onChangeText={setKetones}
         keyboardType="decimal-pad"

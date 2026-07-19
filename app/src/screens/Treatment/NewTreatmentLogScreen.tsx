@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  TextInput,
   Pressable,
   ActivityIndicator,
   ScrollView,
   Alert,
 } from "react-native";
+import AppTextInput from "../../components/AppTextInput";
 import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "../../store/authStore";
 import { logAudit } from "../../lib/audit";
@@ -141,7 +141,7 @@ export default function NewTreatmentLogScreen({ route, navigation }: Props) {
       </View>
 
       <Text className="text-xs font-medium text-gray-600 mb-1">Target Receptor / Tissue</Text>
-      <TextInput
+      <AppTextInput
         value={targetTissue}
         onChangeText={setTargetTissue}
         placeholder="e.g. Somatostatin receptor, thyroid"
@@ -150,7 +150,7 @@ export default function NewTreatmentLogScreen({ route, navigation }: Props) {
 
       <Text className="text-xs font-medium text-gray-600 mb-1">Dose Administered</Text>
       <View className="flex-row mb-1">
-        <TextInput
+        <AppTextInput
           value={doseAdministered}
           onChangeText={setDoseAdministered}
           keyboardType="decimal-pad"
@@ -181,7 +181,7 @@ export default function NewTreatmentLogScreen({ route, navigation }: Props) {
       <Text className="text-xs font-medium text-gray-600 mb-1">
         Dosimetry Source {doseAdministered.trim() ? "*" : ""}
       </Text>
-      <TextInput
+      <AppTextInput
         value={dosimetrySource}
         onChangeText={setDosimetrySource}
         placeholder="e.g. Dr. Njoroge, Nuclear Medicine Physics, ref #2026-014"
@@ -189,7 +189,7 @@ export default function NewTreatmentLogScreen({ route, navigation }: Props) {
       />
 
       <Text className="text-xs font-medium text-gray-600 mb-1">Administered Date</Text>
-      <TextInput
+      <AppTextInput
         value={administeredDate}
         onChangeText={setAdministeredDate}
         placeholder="YYYY-MM-DD"
@@ -197,7 +197,7 @@ export default function NewTreatmentLogScreen({ route, navigation }: Props) {
       />
 
       <Text className="text-xs font-medium text-gray-600 mb-1">Notes</Text>
-      <TextInput
+      <AppTextInput
         value={notes}
         onChangeText={setNotes}
         placeholder="Optional"

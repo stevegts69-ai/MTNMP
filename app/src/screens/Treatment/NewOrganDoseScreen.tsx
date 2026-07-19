@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  TextInput,
   Pressable,
   ActivityIndicator,
   ScrollView,
   Alert,
 } from "react-native";
+import AppTextInput from "../../components/AppTextInput";
 import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "../../store/authStore";
 import { logAudit } from "../../lib/audit";
@@ -132,7 +132,7 @@ export default function NewOrganDoseScreen({ route, navigation }: Props) {
         ))}
       </View>
       {organ === "Other" ? (
-        <TextInput
+        <AppTextInput
           value={customOrgan}
           onChangeText={setCustomOrgan}
           placeholder="Specify organ"
@@ -143,7 +143,7 @@ export default function NewOrganDoseScreen({ route, navigation }: Props) {
       )}
 
       <Text className="text-xs font-medium text-gray-600 mb-1">Dose Value</Text>
-      <TextInput
+      <AppTextInput
         value={doseValue}
         onChangeText={setDoseValue}
         keyboardType="decimal-pad"
@@ -152,7 +152,7 @@ export default function NewOrganDoseScreen({ route, navigation }: Props) {
       />
 
       <Text className="text-xs font-medium text-gray-600 mb-1">Dose Limit Reference (optional)</Text>
-      <TextInput
+      <AppTextInput
         value={doseLimit}
         onChangeText={setDoseLimit}
         keyboardType="decimal-pad"

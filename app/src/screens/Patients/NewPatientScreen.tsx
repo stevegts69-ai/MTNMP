@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  TextInput,
   Pressable,
   ActivityIndicator,
   ScrollView,
@@ -10,6 +9,7 @@ import {
   Platform,
   Alert,
 } from "react-native";
+import AppTextInput from "../../components/AppTextInput";
 import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "../../store/authStore";
 import { logAudit } from "../../lib/audit";
@@ -170,7 +170,7 @@ function Field({
   return (
     <View className="mb-4">
       <Text className="text-xs font-medium text-gray-600 mb-1">{label}</Text>
-      <TextInput
+      <AppTextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}

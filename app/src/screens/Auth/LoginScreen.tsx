@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Pressable, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, Pressable, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native";
 import { useAuthStore } from "../../store/authStore";
+import AppTextInput from "../../components/AppTextInput";
 
 export default function LoginScreen() {
   const signIn = useAuthStore((s) => s.signIn);
@@ -35,7 +36,7 @@ export default function LoginScreen() {
         </Text>
 
         <Text className="text-xs font-medium text-gray-600 mb-1">Email</Text>
-        <TextInput
+        <AppTextInput
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
@@ -45,7 +46,7 @@ export default function LoginScreen() {
         />
 
         <Text className="text-xs font-medium text-gray-600 mb-1">Password</Text>
-        <TextInput
+        <AppTextInput
           value={password}
           onChangeText={setPassword}
           secureTextEntry
