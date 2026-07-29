@@ -3,7 +3,11 @@ import { View, Text, Pressable, ActivityIndicator, KeyboardAvoidingView, Platfor
 import { useAuthStore } from "../../store/authStore";
 import AppTextInput from "../../components/AppTextInput";
 
-export default function LoginScreen() {
+interface Props {
+  onGoToSignUp: () => void;
+}
+
+export default function LoginScreen({ onGoToSignUp }: Props) {
   const signIn = useAuthStore((s) => s.signIn);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -68,6 +72,12 @@ export default function LoginScreen() {
           ) : (
             <Text className="text-white font-medium">Sign In</Text>
           )}
+        </Pressable>
+
+        <Pressable onPress={onGoToSignUp} className="items-center mt-4">
+          <Text className="text-clinical-primary text-sm">
+            New here? Create an account
+          </Text>
         </Pressable>
 
         <Text className="text-xs text-gray-400 mt-8 text-center">
