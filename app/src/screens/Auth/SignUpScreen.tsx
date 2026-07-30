@@ -10,6 +10,7 @@ import {
   Alert,
 } from "react-native";
 import AppTextInput from "../../components/AppTextInput";
+import LegalModal from "../../components/LegalModal";
 import { supabase } from "../../lib/supabase";
 import type { UserRole } from "../../types";
 
@@ -33,6 +34,8 @@ export default function SignUpScreen({ onSignedUp, onBackToLogin }: Props) {
   const [password, setPassword] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [role, setRole] = useState<UserRole>("physician");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [legalModalDoc, setLegalModalDoc] = useState<"privacy" | "terms" | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,6 +44,7 @@ export default function SignUpScreen({ onSignedUp, onBackToLogin }: Props) {
     if (!email.trim()) return "Enter your email.";
     if (password.length < 8) return "Password must be at least 8 characters.";
     if (!inviteCode.trim()) return "Enter your institution's invite code.";
+    if (!agreedToTerms) return "You must agree to the Privacy Policy and Terms of Service to continue.";
     return null;
   };
 
@@ -150,6 +154,35 @@ export default function SignUpScreen({ onSignedUp, onBackToLogin }: Props) {
           hospital's records you should have access to.
         </Text>
 
+        <Pressable
+          onPress={() => setAgreedToTerms((v) => !v)}
+          className="flex-row items-start mb-4"
+        >
+          <View
+            className={`w-5 h-5 rounded border mr-3 mt-0.5 items-center justify-center ${
+              agreedToTerms ? "bg-clinical-primary border-clinical-primary" : "border-gray-400"
+            }`}
+          >
+            {agreedToTerms ? <Text className="text-white text-xs">✓</Text> : null}
+          </View>
+          <Text className="text-xs text-gray-600 flex-1 leading-5">
+            I agree to the{" "}
+            <Text
+              className="text-clinical-primary font-medium"
+              onPress={() => setLegalModalDoc("privacy")}
+            >
+              Privacy Policy
+            </Text>{" "}
+            and{" "}
+            <Text
+              className="text-clinical-primary font-medium"
+              onPress={() => setLegalModalDoc("terms")}
+            >
+              Terms of Service
+            </Text>
+          </Text>
+        </Pressable>
+
         {error ? <Text className="text-clinical-danger text-sm mb-3">{error}</Text> : null}
 
         <Pressable
@@ -170,6 +203,12 @@ export default function SignUpScreen({ onSignedUp, onBackToLogin }: Props) {
           </Text>
         </Pressable>
       </ScrollView>
+
+      <LegalModal
+        visible={legalModalDoc !== null}
+        document={legalModalDoc ?? "privacy"}
+        onClose={() => setLegalModalDoc(null)}
+      />
     </KeyboardAvoidingView>
   );
 }

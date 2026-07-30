@@ -37,7 +37,16 @@
           "photosPermission": "Used to attach imaging files to a patient record."
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "mtnmp-mobile",
+          "organization": "steve-76"
+        }
+      ],
+      "@sentry/react-native"
     ],
     "extra": {
       "eas": {
