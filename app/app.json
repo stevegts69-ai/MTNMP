@@ -30,14 +30,14 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-[
-  "expo-image-picker",
-  {
-    "photosPermission": "Used to attach imaging files to a patient record.",
-    "cameraPermission": false,
-    "microphonePermission": false
-  }
-],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Used to attach imaging files to a patient record.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
       "expo-secure-store",
       [
         "@sentry/react-native/expo",
@@ -47,7 +47,8 @@
           "organization": "steve-76"
         }
       ],
-      "@sentry/react-native"
+      "@sentry/react-native",
+      "expo-font"
     ],
     "extra": {
       "eas": {
