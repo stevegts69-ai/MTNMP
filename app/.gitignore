@@ -1,3 +1,5 @@
 .expo/
 
 .env.local
+node_modules/
+.expo/
