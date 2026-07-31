@@ -22,8 +22,7 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.USE_FINGERPRINT"
       ],
       "package": "com.stevegts69.metabolicnmplatform"
     },
@@ -31,12 +30,14 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      [
-        "expo-image-picker",
-        {
-          "photosPermission": "Used to attach imaging files to a patient record."
-        }
-      ],
+[
+  "expo-image-picker",
+  {
+    "photosPermission": "Used to attach imaging files to a patient record.",
+    "cameraPermission": false,
+    "microphonePermission": false
+  }
+],
       "expo-secure-store",
       [
         "@sentry/react-native/expo",
