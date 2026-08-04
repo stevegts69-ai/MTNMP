@@ -1,5 +1,14 @@
 import React, { useState } from "react";
-import { View, Text, Pressable, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native";
+import {
+  View,
+  Text,
+  Pressable,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
+} from "react-native";
+import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "../../store/authStore";
 import AppTextInput from "../../components/AppTextInput";
 
@@ -24,6 +33,34 @@ export default function LoginScreen({ onGoToSignUp }: Props) {
     const { error: signInError } = await signIn(email.trim(), password);
     setSubmitting(false);
     if (signInError) setError(signInError);
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      Alert.alert(
+        "Email Required",
+        "Please enter your email address above first, then tap Forgot Password."
+      );
+      return;
+    }
+
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+      email.trim(),
+      {
+        // Replace YOUR_GITHUB_USERNAME with your actual GitHub username
+        redirectTo:
+          "https://stevegts69-ai.github.io/auth-pages/reset-password.html",
+      }
+    );
+
+    if (resetError) {
+      Alert.alert("Error", resetError.message);
+    } else {
+      Alert.alert(
+        "Check Your Email",
+        "We've sent a password reset link to your email address."
+      );
+    }
   };
 
   return (
@@ -58,6 +95,16 @@ export default function LoginScreen({ onGoToSignUp }: Props) {
           placeholder="••••••••"
         />
 
+        {/* Forgot Password Link */}
+        <Pressable
+          onPress={handleForgotPassword}
+          className="items-end mb-4"
+        >
+          <Text className="text-xs text-clinical-primary font-medium">
+            Forgot Password?
+          </Text>
+        </Pressable>
+
         {error ? (
           <Text className="text-clinical-danger text-sm mb-2">{error}</Text>
         ) : null}
@@ -65,7 +112,7 @@ export default function LoginScreen({ onGoToSignUp }: Props) {
         <Pressable
           onPress={handleSubmit}
           disabled={submitting}
-          className="bg-clinical-primary rounded-lg py-3 items-center mt-4"
+          className="bg-clinical-primary rounded-lg py-3 items-center mt-2"
         >
           {submitting ? (
             <ActivityIndicator color="#fff" />

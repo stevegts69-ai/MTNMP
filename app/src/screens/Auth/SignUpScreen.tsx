@@ -1,214 +1,153 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Text,
-  Pressable,
-  ActivityIndicator,
+  TextInput,
+  TouchableOpacity,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
   Alert,
-} from "react-native";
-import AppTextInput from "../../components/AppTextInput";
-import LegalModal from "../../components/LegalModal";
-import { supabase } from "../../lib/supabase";
-import type { UserRole } from "../../types";
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { supabase } from '../../lib/supabase';
 
-interface Props {
-  onSignedUp: () => void;
-  onBackToLogin: () => void;
+interface SignUpScreenProps {
+  onSignedUp?: () => void;
+  onBackToLogin?: () => void;
 }
 
-// Admin accounts are deliberately excluded from self-signup — an institution's
-// first admin should be set up directly by whoever manages the deployment,
-// not selectable by anyone who has an invite code.
-const SELF_SIGNUP_ROLES: { value: UserRole; label: string }[] = [
-  { value: "physician", label: "Physician" },
-  { value: "radiologist", label: "Radiologist" },
-  { value: "nuclear_med_physicist", label: "Nuclear Med. Physicist" },
-];
+export default function SignUpScreen({ onSignedUp, onBackToLogin }: SignUpScreenProps) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-export default function SignUpScreen({ onSignedUp, onBackToLogin }: Props) {
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [inviteCode, setInviteCode] = useState("");
-  const [role, setRole] = useState<UserRole>("physician");
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [legalModalDoc, setLegalModalDoc] = useState<"privacy" | "terms" | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const validate = (): string | null => {
-    if (!fullName.trim()) return "Enter your full name.";
-    if (!email.trim()) return "Enter your email.";
-    if (password.length < 8) return "Password must be at least 8 characters.";
-    if (!inviteCode.trim()) return "Enter your institution's invite code.";
-    if (!agreedToTerms) return "You must agree to the Privacy Policy and Terms of Service to continue.";
-    return null;
-  };
-
-  const handleSignUp = async () => {
-    setError(null);
-    const validationError = validate();
-    if (validationError) {
-      setError(validationError);
+  async function handleSignUp() {
+    if (!email || !password || !confirmPassword) {
+      Alert.alert('Error', 'Please fill in all fields.');
       return;
     }
 
-    setSubmitting(true);
-    const { error: signUpError } = await supabase.auth.signUp({
-      email: email.trim(),
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match.');
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.auth.signUp({
+      email,
       password,
-      options: {
-        data: {
-          full_name: fullName.trim(),
-          role,
-          invite_code: inviteCode.trim(),
-        },
-      },
     });
-    setSubmitting(false);
 
-    if (signUpError) {
-      setError(signUpError.message);
-      return;
+    if (error) {
+      Alert.alert('Sign Up Failed', error.message);
+    } else {
+      Alert.alert(
+        'Success',
+        'Account created successfully! Please check your email for confirmation.'
+      );
+      if (onSignedUp) {
+        onSignedUp();
+      } else if (onBackToLogin) {
+        onBackToLogin();
+      }
     }
-
-    Alert.alert(
-      "Check your email",
-      "We've sent a confirmation link to your email. Confirm it, then sign in — your account will need approval from your institution's admin before you can start recording patient data.",
-      [{ text: "OK", onPress: onSignedUp }]
-    );
-  };
+    setLoading(false);
+  }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      className="flex-1 bg-clinical-bg"
-    >
-      <ScrollView className="flex-1 px-6 pt-4" keyboardShouldPersistTaps="handled">
-        <Text className="text-2xl font-semibold text-clinical-primary mb-1 mt-6">
-          Create Account
-        </Text>
-        <Text className="text-sm text-gray-500 mb-6">
-          You'll need an invite code from your institution to sign up.
-        </Text>
-
-        <Text className="text-xs font-medium text-gray-600 mb-1">Full Name</Text>
-        <AppTextInput
-          value={fullName}
-          onChangeText={setFullName}
-          placeholder="Dr. Jane Doe"
-          className="border border-gray-300 rounded-lg px-4 py-3 mb-4 bg-clinical-card"
-        />
-
-        <Text className="text-xs font-medium text-gray-600 mb-1">Email</Text>
-        <AppTextInput
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          placeholder="you@institution.org"
-          className="border border-gray-300 rounded-lg px-4 py-3 mb-4 bg-clinical-card"
-        />
-
-        <Text className="text-xs font-medium text-gray-600 mb-1">Password</Text>
-        <AppTextInput
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          placeholder="At least 8 characters"
-          className="border border-gray-300 rounded-lg px-4 py-3 mb-4 bg-clinical-card"
-        />
-
-        <Text className="text-xs font-medium text-gray-600 mb-1">Role</Text>
-        <View className="flex-row flex-wrap mb-4">
-          {SELF_SIGNUP_ROLES.map((r) => (
-            <Pressable
-              key={r.value}
-              onPress={() => setRole(r.value)}
-              className={`px-4 py-2 rounded-lg mr-2 mb-2 border ${
-                role === r.value
-                  ? "bg-clinical-primary border-clinical-primary"
-                  : "bg-clinical-card border-gray-300"
-              }`}
-            >
-              <Text className={role === r.value ? "text-white" : "text-gray-700"}>
-                {r.label}
+    <SafeAreaView className="flex-1 bg-clinical-bg" edges={['top', 'bottom', 'left', 'right']}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        className="flex-1"
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
+          className="px-6 py-6"
+        >
+          <View className="flex-1 justify-center">
+            {/* Header */}
+            <View className="mb-8">
+              <Text className="text-3xl font-bold text-clinical-text mb-2">
+                Create Account
               </Text>
-            </Pressable>
-          ))}
-        </View>
+              <Text className="text-base text-gray-600">
+                Sign up to get started with your account
+              </Text>
+            </View>
 
-        <Text className="text-xs font-medium text-gray-600 mb-1">Institution Invite Code</Text>
-        <AppTextInput
-          value={inviteCode}
-          onChangeText={setInviteCode}
-          autoCapitalize="characters"
-          placeholder="e.g. TESTHOSP-2026"
-          className="border border-gray-300 rounded-lg px-4 py-3 mb-2 bg-clinical-card"
-        />
-        <Text className="text-xs text-gray-400 mb-4">
-          Get this from your institution's admin — it's how we know which
-          hospital's records you should have access to.
-        </Text>
+            {/* Form Fields */}
+            <View className="space-y-4">
+              <View>
+                <Text className="text-sm font-medium text-clinical-text mb-1">
+                  Email
+                </Text>
+                <TextInput
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="Enter your email"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-clinical-text"
+                />
+              </View>
 
-        <Pressable
-          onPress={() => setAgreedToTerms((v) => !v)}
-          className="flex-row items-start mb-4"
-        >
-          <View
-            className={`w-5 h-5 rounded border mr-3 mt-0.5 items-center justify-center ${
-              agreedToTerms ? "bg-clinical-primary border-clinical-primary" : "border-gray-400"
-            }`}
-          >
-            {agreedToTerms ? <Text className="text-white text-xs">✓</Text> : null}
+              <View>
+                <Text className="text-sm font-medium text-clinical-text mb-1">
+                  Password
+                </Text>
+                <TextInput
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Create a password"
+                  secureTextEntry
+                  className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-clinical-text"
+                />
+              </View>
+
+              <View>
+                <Text className="text-sm font-medium text-clinical-text mb-1">
+                  Confirm Password
+                </Text>
+                <TextInput
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  placeholder="Confirm your password"
+                  secureTextEntry
+                  className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-clinical-text"
+                />
+              </View>
+
+              <TouchableOpacity
+                onPress={handleSignUp}
+                disabled={loading}
+                className="w-full bg-clinical-primary rounded-lg py-4 items-center mt-4"
+              >
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text className="text-white font-semibold text-base">
+                    Sign Up
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
-          <Text className="text-xs text-gray-600 flex-1 leading-5">
-            I agree to the{" "}
-            <Text
-              className="text-clinical-primary font-medium"
-              onPress={() => setLegalModalDoc("privacy")}
-            >
-              Privacy Policy
-            </Text>{" "}
-            and{" "}
-            <Text
-              className="text-clinical-primary font-medium"
-              onPress={() => setLegalModalDoc("terms")}
-            >
-              Terms of Service
-            </Text>
-          </Text>
-        </Pressable>
 
-        {error ? <Text className="text-clinical-danger text-sm mb-3">{error}</Text> : null}
-
-        <Pressable
-          onPress={handleSignUp}
-          disabled={submitting}
-          className="bg-clinical-primary rounded-lg py-3 items-center mt-2"
-        >
-          {submitting ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text className="text-white font-medium">Create Account</Text>
-          )}
-        </Pressable>
-
-        <Pressable onPress={onBackToLogin} className="items-center mt-4 mb-10">
-          <Text className="text-clinical-primary text-sm">
-            Already have an account? Sign in
-          </Text>
-        </Pressable>
-      </ScrollView>
-
-      <LegalModal
-        visible={legalModalDoc !== null}
-        document={legalModalDoc ?? "privacy"}
-        onClose={() => setLegalModalDoc(null)}
-      />
-    </KeyboardAvoidingView>
+          {/* Footer Link */}
+          <View className="py-4 items-center">
+            <TouchableOpacity onPress={onBackToLogin} activeOpacity={0.7}>
+              <Text className="text-sm text-gray-600">
+                Already have an account?{' '}
+                <Text className="text-clinical-primary font-bold">Sign In</Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }

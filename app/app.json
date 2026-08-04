@@ -10,7 +10,8 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSFaceIDUsageDescription": "Used to securely verify your identity before accessing patient records."
-      }
+      },
+      "bundleIdentifier": "com.stevegts69.metabolicnmplatform"
     },
     "android": {
       "adaptiveIcon": {
@@ -47,8 +48,8 @@
           "organization": "steve-76"
         }
       ],
-      "@sentry/react-native",
-      "expo-font"
+      "expo-font",
+      "expo-web-browser"
     ],
     "extra": {
       "eas": {

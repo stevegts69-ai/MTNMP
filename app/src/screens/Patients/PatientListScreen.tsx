@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { View, Text, FlatList, Pressable, RefreshControl, Alert } from "react-native";
+import * as WebBrowser from "expo-web-browser";
 import AppTextInput from "../../components/AppTextInput";
-import LegalModal from "../../components/LegalModal";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "../../store/authStore";
@@ -20,7 +20,6 @@ export default function PatientListScreen({ navigation }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState("");
   const [isOffline, setIsOffline] = useState(false);
-  const [legalModalDoc, setLegalModalDoc] = useState<"privacy" | "terms" | null>(null);
 
   const handleSignOut = () => {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
@@ -29,11 +28,15 @@ export default function PatientListScreen({ navigation }: Props) {
     ]);
   };
 
+  const openPrivacyPolicy = () => {
+    WebBrowser.openBrowserAsync("https://stevegts69-ai.github.io/auth-pages/privacy.html");
+  };
+
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
         <View className="flex-row items-center">
-          <Pressable onPress={() => setLegalModalDoc("privacy")} className="pr-3">
+          <Pressable onPress={openPrivacyPolicy} className="pr-3">
             <Text className="text-gray-400 text-xs">Legal</Text>
           </Pressable>
           <Pressable onPress={handleSignOut} className="pr-1">
@@ -152,12 +155,6 @@ export default function PatientListScreen({ navigation }: Props) {
             </Text>
           </Pressable>
         )}
-      />
-
-      <LegalModal
-        visible={legalModalDoc !== null}
-        document={legalModalDoc ?? "privacy"}
-        onClose={() => setLegalModalDoc(null)}
       />
     </View>
   );
