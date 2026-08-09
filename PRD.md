@@ -223,3 +223,58 @@ Supabase currently has no African region (see earlier region-selection discussio
 ### 11.3 Non-technical scaling costs
 - **Regulatory complexity compounds per country, not per user.** Ten doctors in one country is one regulatory relationship; millions of doctors across many countries means many separate regulatory relationships, each with its own clearance process. This is typically the slower, harder constraint compared to the technical side of scaling.
 - **Support and customer success operations** (e.g., hospital IT issues at odd hours) are a real operational cost independent of infrastructure scaling.
+
+---
+
+## 12. Production Hardening — Loveworld Store Launch
+
+Following MVP completion and successful AI Foundry submission, the app underwent a focused production-hardening pass ahead of two real deployment targets: AI Foundry's "device-pep" hardware (standard Android with Google Play Services) and the Loveworld App Store (direct APK submission, informal review process). This section documents what changed and why — distinct from the MVP build documented in Section 3.
+
+### 12.1 Production environment separation — ✅ Done
+A completely separate Supabase project was created for production, isolated from the dev/test project used throughout the MVP build (which retains test institutions and accounts like `doctor2@test.com`). All migrations were re-applied clean against production. No test data has ever touched the production database.
+
+### 12.2 Self-service signup with invite codes — ✅ Built
+Manual account creation (admin runs SQL for every new doctor) did not scale to real hospital onboarding. Self-service signup was added:
+- Each institution has a unique invite code, shared directly by the institution with its own staff — this prevents anyone from attaching themselves to a hospital's patient data without permission.
+- New accounts still start unverified, same as before — self-service signup changes *who creates the account*, not the approval requirement.
+- Because Supabase email confirmation is enabled, profile creation is deferred: signup stores name/role/invite code as auth user metadata, and a `SECURITY DEFINER` database function (`complete_signup_profile()`) creates the actual profile on first successful login after confirmation — narrowly scoped so it can only ever act on the calling user's own account.
+- Admin accounts are excluded from self-signup by design — an institution's first admin is always set up manually (see 12.1), and subsequent admins would need to be promoted by an existing admin (not yet built as a UI feature — currently a manual SQL step).
+
+### 12.3 Admin approval screen — ✅ Built
+Replaces manual SQL verification with a real in-app screen (Admin tab, visible only to admin-role accounts): lists pending signups with a Verify action, and active team members.
+
+### 12.4 Account deactivation — ✅ Built
+A gap identified during testing: nothing allowed removing a doctor's access after they left an institution. Added `is_active` to profiles, enforced by modifying the shared `current_institution_id()` RLS helper function to return NULL for inactive users — since nearly every table's RLS policy depends on this one function, deactivation locks a departed staff member out of all read and write access across the entire app from a single, central change, rather than requiring updates to every individual policy.
+- Deactivation is a harder cutoff than "unverified" — unverified accounts can still view records; deactivated accounts cannot.
+- Self-deactivation is blocked in the UI (an admin cannot deactivate their own account) to prevent an institution being accidentally locked out with no one left to reverse it.
+- **Known limitation:** if an institution's *only* admin needs to be deactivated (e.g., they've left and there's no second admin), this currently requires manual platform-level intervention (direct Supabase access), since no in-app mechanism exists above the institution-admin tier. Institutions are advised to designate at least two admins where possible to avoid this single point of failure. A proper platform-super-admin tier is a legitimate future feature, not built for this launch.
+
+### 12.5 Error monitoring — ✅ Built, with PHI scrubbing verified
+Sentry was integrated for crash/error visibility. Given this is a clinical app, default Sentry behavior (which can capture screen state, local variables, and breadcrumbs) was explicitly hardened:
+- IP address storage disabled.
+- Server-side scrubbing rule removing `$frame.vars.**` (all local stack-trace variables) — this is the strongest protection, since it blanket-removes any in-scope object's contents regardless of field naming, rather than relying solely on name-based matching.
+- Server-side scrubbing rule removing `$user.geo.**` (location data).
+- A comprehensive list of sensitive field names (patient identifiers, clinical/imaging data, treatment data, credentials) configured for name-based scrubbing as a second layer.
+- **Verified, not just configured:** a deliberate test error was triggered from a patient-data-loaded screen (New Patient, with form data actively populated) and the resulting Sentry event was manually inspected — no patient data or IP address was present.
+- **Known residual gap:** field-based and frame-variable scrubbing do not protect against patient information typed directly into free-text fields (e.g., a physician typing a patient's name into a notes field) if that text ends up inside an error message string. This is a coding-discipline issue, not a configuration gap — noted for ongoing awareness, not solved by tooling.
+
+### 12.6 Password reset — ✅ Built
+Self-service "Forgot Password" flow added, addressing a gap in the original MVP (previously, only manual admin-triggered reset via Supabase dashboard was possible — that remains available as a fallback).
+
+### 12.7 Legal documents — ✅ Hosted, not in-app
+Originally built as in-app modal-based screens (Section 3.6 equivalent), Privacy Policy and Terms of Service were moved to a hosted website (GitHub Pages) instead. The signup flow's mandatory agreement checkbox now links to the hosted pages. This was a deliberate simplification, not a regression — hosting avoids needing to keep in-app and external copies synchronized, and is easier to update post-launch without an app rebuild.
+
+### 12.8 Date picker for patient date of birth — ✅ Built
+A native visual date picker (`@react-native-community/datetimepicker`) replaced free-text date entry on the New Patient screen, removing a real data-entry error source (ambiguous MM/DD vs. DD/MM ordering).
+
+### 12.9 Development workflow change
+With Sentry and the native date picker integrated, Expo Go can no longer be used for testing this project at all (both require native code outside Expo Go's fixed bundled module set). A custom development build now serves the same fast-iteration role Expo Go previously served.
+
+### 12.10 User manual — ✅ Written
+A user-facing manual was written covering the app's purpose, doctor signup/onboarding, admin approval and deactivation workflows, and a security/privacy summary — provided directly to Loveworld as part of the submission package, and intended for hosting alongside the Privacy Policy/Terms for ongoing user reference.
+
+### 12.11 Deferred items (tracked, not forgotten)
+- Self-service institution onboarding (currently: platform team manually creates each new institution + founding admin) — deliberately deferred; appropriate for this launch's scale, revisit if/when onboarding many institutions becomes frequent.
+- Platform-super-admin tier (for the sole-admin-departure edge case in 12.4).
+- Admin-facing invite code management/regeneration (currently platform-team-issued only).
+- In-app link to the hosted user manual (currently distributed only via direct submission to Loveworld).
