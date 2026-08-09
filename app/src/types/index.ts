@@ -19,6 +19,7 @@ export interface Profile {
   role: UserRole;
   credential_number: string | null;
   credential_verified: boolean;
+  is_active: boolean;
   created_at: string;
 }
 

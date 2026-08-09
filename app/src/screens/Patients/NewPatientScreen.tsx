@@ -9,6 +9,9 @@ import {
   Platform,
   Alert,
 } from "react-native";
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 import AppTextInput from "../../components/AppTextInput";
 import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "../../store/authStore";
@@ -26,11 +29,30 @@ export default function NewPatientScreen({ navigation }: Props) {
   const [mrn, setMrn] = useState("");
   const [fullName, setFullName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState(""); // YYYY-MM-DD
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [sex, setSex] = useState<(typeof SEX_OPTIONS)[number] | "">("");
   const [cancerType, setCancerType] = useState("");
   const [cancerStage, setCancerStage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleDateChange = (
+    event: DateTimePickerEvent,
+    date?: Date
+  ) => {
+    // Hide picker on Android immediately upon selection
+    if (Platform.OS === "android") {
+      setShowDatePicker(false);
+    }
+
+    if (event.type === "set" && date) {
+      setSelectedDate(date);
+      // Converts Date object into database-ready "YYYY-MM-DD" string
+      const isoString = date.toISOString().split("T")[0];
+      setDateOfBirth(isoString);
+    }
+  };
 
   const validate = (): string | null => {
     if (!mrn.trim()) return "MRN is required.";
@@ -78,7 +100,6 @@ export default function NewPatientScreen({ navigation }: Props) {
     setSubmitting(false);
 
     if (insertError) {
-      // Postgres unique_violation on (institution_id, mrn)
       if (insertError.code === "23505") {
         setError("A patient with this MRN already exists at your institution.");
       } else {
@@ -99,24 +120,61 @@ export default function NewPatientScreen({ navigation }: Props) {
     navigation.goBack();
   };
 
+  // Human-friendly display string (e.g. "14 Oct 1992") to prevent DD/MM ambiguity
+  const formattedDisplayDate = selectedDate
+    ? selectedDate.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : "";
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       className="flex-1 bg-clinical-bg"
     >
       <ScrollView className="flex-1 px-5 pt-4" keyboardShouldPersistTaps="handled">
-        <Text className="text-lg font-semibold text-clinical-primary mb-4">
+      <Text className="text-lg font-semibold text-clinical-primary mb-4">
           New Patient
         </Text>
 
         <Field label="MRN *" value={mrn} onChangeText={setMrn} placeholder="e.g. MRN-00123" />
         <Field label="Full Name *" value={fullName} onChangeText={setFullName} placeholder="Patient full name" />
-        <Field
-          label="Date of Birth"
-          value={dateOfBirth}
-          onChangeText={setDateOfBirth}
-          placeholder="YYYY-MM-DD"
-        />
+
+        {/* Date of Birth Selection Field */}
+        <View className="mb-4">
+          <Text className="text-xs font-medium text-gray-600 mb-1">Date of Birth</Text>
+          <Pressable
+            onPress={() => setShowDatePicker(true)}
+            className="border border-gray-300 rounded-lg px-4 py-3 bg-clinical-card justify-center"
+          >
+            <Text className={formattedDisplayDate ? "text-gray-900" : "text-gray-400"}>
+              {formattedDisplayDate || "Select Date of Birth"}
+            </Text>
+          </Pressable>
+        </View>
+
+        {/* Native Date Picker Modal */}
+        {showDatePicker && (
+          <View>
+            <DateTimePicker
+              value={selectedDate || new Date(2000, 0, 1)}
+              mode="date"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              onChange={handleDateChange}
+              maximumDate={new Date()}
+            />
+            {Platform.OS === "ios" && (
+              <Pressable
+                onPress={() => setShowDatePicker(false)}
+                className="align-self-end py-2 px-4 mt-1"
+              >
+                <Text className="text-clinical-primary font-semibold text-right">Done</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
 
         <Text className="text-xs font-medium text-gray-600 mb-1">Sex</Text>
         <View className="flex-row mb-4">
