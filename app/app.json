@@ -43,7 +43,7 @@
       [
         "@sentry/react-native/expo",
         {
-          "url": "https://sentry.io/",
+          "url": "https://de.sentry.io/",
           "project": "mtnmp-mobile",
           "organization": "steve-76"
         }
