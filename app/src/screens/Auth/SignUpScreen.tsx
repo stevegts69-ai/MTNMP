@@ -10,6 +10,7 @@ import {
   Alert,
   Linking,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AppTextInput from "../../components/AppTextInput";
 import { supabase } from "../../lib/supabase";
@@ -34,6 +35,7 @@ export default function SignUpScreen({ onSignedUp, onBackToLogin }: Props) {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [inviteCode, setInviteCode] = useState("");
   const [role, setRole] = useState<UserRole>("physician");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -131,13 +133,28 @@ export default function SignUpScreen({ onSignedUp, onBackToLogin }: Props) {
           />
 
           <Text className="text-xs font-medium text-gray-600 mb-1">Password</Text>
-          <AppTextInput
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            placeholder="At least 8 characters"
-            className="border border-gray-300 rounded-lg px-4 py-3 mb-4 bg-clinical-card"
-          />
+          <View className="relative mb-4">
+            <AppTextInput
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              placeholder="At least 8 characters"
+              className="border border-gray-300 rounded-lg px-4 py-3 pr-12 bg-clinical-card"
+            />
+            <Pressable
+              onPress={() => setShowPassword((visible) => !visible)}
+              accessibilityRole="button"
+              accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+              className="absolute right-0 top-0 bottom-0 w-12 items-center justify-center"
+              hitSlop={8}
+            >
+              <Ionicons
+                name={showPassword ? "eye-off-outline" : "eye-outline"}
+                size={20}
+                color="#64748b"
+              />
+            </Pressable>
+          </View>
 
           <Text className="text-xs font-medium text-gray-600 mb-1">Role</Text>
           <View className="flex-row flex-wrap mb-4">

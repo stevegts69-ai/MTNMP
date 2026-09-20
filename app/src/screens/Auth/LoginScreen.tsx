@@ -8,6 +8,7 @@ import {
   Platform,
   Alert,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "../../store/authStore";
 import AppTextInput from "../../components/AppTextInput";
@@ -20,6 +21,7 @@ export default function LoginScreen({ onGoToSignUp }: Props) {
   const signIn = useAuthStore((s) => s.signIn);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [resetSubmitting, setResetSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -106,13 +108,28 @@ export default function LoginScreen({ onGoToSignUp }: Props) {
         />
 
         <Text className="text-xs font-medium text-gray-600 mb-1">Password</Text>
-        <AppTextInput
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          className="border border-gray-300 rounded-lg px-4 py-3 mb-2 bg-clinical-card"
-          placeholder="••••••••"
-        />
+        <View className="relative mb-2">
+          <AppTextInput
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            className="border border-gray-300 rounded-lg px-4 py-3 pr-12 bg-clinical-card"
+            placeholder="••••••••"
+          />
+          <Pressable
+            onPress={() => setShowPassword((visible) => !visible)}
+            accessibilityRole="button"
+            accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+            className="absolute right-0 top-0 bottom-0 w-12 items-center justify-center"
+            hitSlop={8}
+          >
+            <Ionicons
+              name={showPassword ? "eye-off-outline" : "eye-outline"}
+              size={20}
+              color="#64748b"
+            />
+          </Pressable>
+        </View>
 
         {/* Forgot Password Link */}
         <Pressable
