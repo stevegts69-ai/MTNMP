@@ -21,6 +21,7 @@ export default function LoginScreen({ onGoToSignUp }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [resetSubmitting, setResetSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
@@ -36,6 +37,7 @@ export default function LoginScreen({ onGoToSignUp }: Props) {
   };
 
   const handleForgotPassword = async () => {
+    setError(null);
     if (!email.trim()) {
       Alert.alert(
         "Email Required",
@@ -44,22 +46,39 @@ export default function LoginScreen({ onGoToSignUp }: Props) {
       return;
     }
 
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-      email.trim(),
-      {
-        // Replace YOUR_GITHUB_USERNAME with your actual GitHub username
-        redirectTo:
-          "https://stevegts69-ai.github.io/auth-pages/reset-password.html",
-      }
-    );
+    setResetSubmitting(true);
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        email.trim(),
+        {
+          redirectTo:
+            "https://stevegts69-ai.github.io/auth-pages/reset-password.html",
+        }
+      );
 
-    if (resetError) {
-      Alert.alert("Error", resetError.message);
-    } else {
+      if (resetError) {
+        const message =
+          resetError.status === 429
+            ? "Too many reset requests. Please wait a few minutes and try again."
+            : resetError.message;
+        setError(message);
+        Alert.alert("Password Reset Error", message);
+        return;
+      }
+
       Alert.alert(
         "Check Your Email",
         "We've sent a password reset link to your email address."
       );
+    } catch (resetException) {
+      const message =
+        resetException instanceof Error
+          ? resetException.message
+          : "Unable to send a password reset email. Check your connection and try again.";
+      setError(message);
+      Alert.alert("Password Reset Error", message);
+    } finally {
+      setResetSubmitting(false);
     }
   };
 
@@ -98,10 +117,11 @@ export default function LoginScreen({ onGoToSignUp }: Props) {
         {/* Forgot Password Link */}
         <Pressable
           onPress={handleForgotPassword}
+          disabled={resetSubmitting}
           className="items-end mb-4"
         >
           <Text className="text-xs text-clinical-primary font-medium">
-            Forgot Password?
+            {resetSubmitting ? "Sending reset link..." : "Forgot Password?"}
           </Text>
         </Pressable>
 
