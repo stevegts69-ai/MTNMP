@@ -1,15 +1,17 @@
 import { create } from "zustand";
 import { supabase } from "../lib/supabase";
 import type { Profile } from "../types";
-import type { Session } from "@supabase/supabase-js";
+import type { Session, User } from "@supabase/supabase-js";
 
 interface AuthState {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
   profileError: string | null;
+  profileSetupRequired: boolean;
   initialize: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  refreshProfile: () => Promise<string | null>;
   signOut: () => Promise<void>;
 }
 
@@ -18,21 +20,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   profile: null,
   loading: true,
   profileError: null,
+  profileSetupRequired: false,
 
   initialize: async () => {
     const { data } = await supabase.auth.getSession();
     set({ session: data.session });
     if (data.session) {
-      await fetchProfile(data.session.user.id, set);
+      await fetchProfile(data.session.user, set);
     }
     set({ loading: false });
 
-    supabase.auth.onAuthStateChange(async (_event, session) => {
+    supabase.auth.onAuthStateChange(async (event, session) => {
       set({ session });
       if (session) {
-        await fetchProfile(session.user.id, set);
+        if (event === "USER_UPDATED" && get().profileSetupRequired) return;
+        await fetchProfile(session.user, set);
       } else {
-        set({ profile: null, profileError: null });
+        set({ profile: null, profileError: null, profileSetupRequired: false });
       }
     });
   },
@@ -42,24 +46,49 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     return { error: error?.message ?? null };
   },
 
+  refreshProfile: async () => {
+    const session = get().session;
+    if (!session) return "No active session.";
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", session.user.id)
+      .single();
+
+    if (error || !data) {
+      const message = error?.message ?? "Account setup couldn't be completed.";
+      set({ profile: null, profileError: message, profileSetupRequired: true });
+      return message;
+    }
+
+    set({ profile: data as Profile, profileError: null, profileSetupRequired: false });
+    return null;
+  },
+
   signOut: async () => {
     await supabase.auth.signOut();
-    set({ session: null, profile: null, profileError: null });
+    set({ session: null, profile: null, profileError: null, profileSetupRequired: false });
   },
 }));
 
 async function fetchProfile(
-  userId: string,
+  user: User,
   set: (partial: Partial<AuthState>) => void
 ) {
   const { data, error } = await supabase
     .from("profiles")
     .select("*")
-    .eq("id", userId)
+    .eq("id", user.id)
     .single();
 
   if (!error && data) {
-    set({ profile: data as Profile, profileError: null });
+    set({ profile: data as Profile, profileError: null, profileSetupRequired: false });
+    return;
+  }
+
+  if (error?.code === "PGRST116" && !user.user_metadata?.invite_code) {
+    set({ profile: null, profileError: null, profileSetupRequired: true });
     return;
   }
 
@@ -73,6 +102,7 @@ async function fetchProfile(
     set({
       profile: null,
       profileError: rpcError.message,
+      profileSetupRequired: false,
     });
     return;
   }
@@ -80,15 +110,16 @@ async function fetchProfile(
   const retry = await supabase
     .from("profiles")
     .select("*")
-    .eq("id", userId)
+    .eq("id", user.id)
     .single();
 
   if (!retry.error && retry.data) {
-    set({ profile: retry.data as Profile, profileError: null });
+    set({ profile: retry.data as Profile, profileError: null, profileSetupRequired: false });
   } else {
     set({
       profile: null,
       profileError: "Account setup couldn't be completed. Contact your institution's admin.",
+      profileSetupRequired: false,
     });
   }
 }

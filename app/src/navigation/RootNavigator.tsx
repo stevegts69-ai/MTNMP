@@ -5,6 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuthStore } from "../store/authStore";
 import LoginScreen from "../screens/Auth/LoginScreen";
 import SignUpScreen from "../screens/Auth/SignUpScreen";
+import CompleteProfileScreen from "../screens/Auth/CompleteProfileScreen";
 import LockScreen from "../screens/Auth/LockScreen";
 import OnboardingScreen from "../screens/Onboarding/OnboardingScreen";
 import MainTabs from "./MainTabs";
@@ -12,7 +13,8 @@ import MainTabs from "./MainTabs";
 const ONBOARDING_SEEN_KEY = "has_seen_onboarding";
 
 export default function RootNavigator() {
-  const { session, loading, profileError, initialize, signOut } = useAuthStore();
+  const { session, loading, profileError, profileSetupRequired, initialize, signOut } =
+    useAuthStore();
   const [unlocked, setUnlocked] = useState(false);
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -58,6 +60,10 @@ export default function RootNavigator() {
         <ActivityIndicator color="#1E3A5F" />
       </View>
     );
+  }
+
+  if (session && profileSetupRequired) {
+    return <CompleteProfileScreen />;
   }
 
   // Signed in, but their profile couldn't be created/found — most likely

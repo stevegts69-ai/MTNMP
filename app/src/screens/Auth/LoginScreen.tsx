@@ -6,12 +6,11 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "../../store/authStore";
 import AppTextInput from "../../components/AppTextInput";
+import { signInWithGoogle } from "../../lib/googleAuth";
 
 interface Props {
   onGoToSignUp: () => void;
@@ -23,7 +22,7 @@ export default function LoginScreen({ onGoToSignUp }: Props) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [resetSubmitting, setResetSubmitting] = useState(false);
+  const [googleSubmitting, setGoogleSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
@@ -38,50 +37,12 @@ export default function LoginScreen({ onGoToSignUp }: Props) {
     if (signInError) setError(signInError);
   };
 
-  const handleForgotPassword = async () => {
+  const handleGoogleSignIn = async () => {
     setError(null);
-    if (!email.trim()) {
-      Alert.alert(
-        "Email Required",
-        "Please enter your email address above first, then tap Forgot Password."
-      );
-      return;
-    }
-
-    setResetSubmitting(true);
-    try {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        email.trim(),
-        {
-          redirectTo:
-            "https://stevegts69-ai.github.io/auth-pages/reset-password.html",
-        }
-      );
-
-      if (resetError) {
-        const message =
-          resetError.status === 429
-            ? "Too many reset requests. Please wait a few minutes and try again."
-            : resetError.message;
-        setError(message);
-        Alert.alert("Password Reset Error", message);
-        return;
-      }
-
-      Alert.alert(
-        "Check Your Email",
-        "We've sent a password reset link to your email address."
-      );
-    } catch (resetException) {
-      const message =
-        resetException instanceof Error
-          ? resetException.message
-          : "Unable to send a password reset email. Check your connection and try again.";
-      setError(message);
-      Alert.alert("Password Reset Error", message);
-    } finally {
-      setResetSubmitting(false);
-    }
+    setGoogleSubmitting(true);
+    const result = await signInWithGoogle();
+    if (result.error) setError(result.error);
+    setGoogleSubmitting(false);
   };
 
   return (
@@ -131,30 +92,40 @@ export default function LoginScreen({ onGoToSignUp }: Props) {
           </Pressable>
         </View>
 
-        {/* Forgot Password Link */}
-        <Pressable
-          onPress={handleForgotPassword}
-          disabled={resetSubmitting}
-          className="items-end mb-4"
-        >
-          <Text className="text-xs text-clinical-primary font-medium">
-            {resetSubmitting ? "Sending reset link..." : "Forgot Password?"}
-          </Text>
-        </Pressable>
-
         {error ? (
           <Text className="text-clinical-danger text-sm mb-2">{error}</Text>
         ) : null}
 
         <Pressable
           onPress={handleSubmit}
-          disabled={submitting}
+          disabled={submitting || googleSubmitting}
           className="bg-clinical-primary rounded-lg py-3 items-center mt-2"
         >
           {submitting ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <Text className="text-white font-medium">Sign In</Text>
+          )}
+        </Pressable>
+
+        <View className="flex-row items-center my-5">
+          <View className="h-px flex-1 bg-gray-300" />
+          <Text className="px-3 text-xs text-gray-500">or</Text>
+          <View className="h-px flex-1 bg-gray-300" />
+        </View>
+
+        <Pressable
+          onPress={handleGoogleSignIn}
+          disabled={submitting || googleSubmitting}
+          className="flex-row items-center justify-center rounded-lg border border-gray-300 bg-clinical-card py-3"
+        >
+          {googleSubmitting ? (
+            <ActivityIndicator color="#1E3A5F" />
+          ) : (
+            <>
+              <Ionicons name="logo-google" size={18} color="#4285F4" />
+              <Text className="ml-2 font-medium text-gray-700">Continue with Google</Text>
+            </>
           )}
         </Pressable>
 

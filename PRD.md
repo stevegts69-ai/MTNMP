@@ -258,9 +258,6 @@ Sentry was integrated for crash/error visibility. Given this is a clinical app, 
 - **Verified, not just configured:** a deliberate test error was triggered from a patient-data-loaded screen (New Patient, with form data actively populated) and the resulting Sentry event was manually inspected — no patient data or IP address was present.
 - **Known residual gap:** field-based and frame-variable scrubbing do not protect against patient information typed directly into free-text fields (e.g., a physician typing a patient's name into a notes field) if that text ends up inside an error message string. This is a coding-discipline issue, not a configuration gap — noted for ongoing awareness, not solved by tooling.
 
-### 12.6 Password reset — ✅ Built
-Self-service "Forgot Password" flow added, addressing a gap in the original MVP (previously, only manual admin-triggered reset via Supabase dashboard was possible — that remains available as a fallback).
-
 ### 12.7 Legal documents — ✅ Hosted, not in-app
 Originally built as in-app modal-based screens (Section 3.6 equivalent), Privacy Policy and Terms of Service were moved to a hosted website (GitHub Pages) instead. The signup flow's mandatory agreement checkbox now links to the hosted pages. This was a deliberate simplification, not a regression — hosting avoids needing to keep in-app and external copies synchronized, and is easier to update post-launch without an app rebuild.
 

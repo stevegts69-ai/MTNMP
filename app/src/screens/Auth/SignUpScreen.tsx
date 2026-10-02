@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AppTextInput from "../../components/AppTextInput";
 import { supabase } from "../../lib/supabase";
+import { signInWithGoogle } from "../../lib/googleAuth";
 import type { UserRole } from "../../types";
 
 interface Props {
@@ -40,6 +41,7 @@ export default function SignUpScreen({ onSignedUp, onBackToLogin }: Props) {
   const [role, setRole] = useState<UserRole>("physician");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [googleSubmitting, setGoogleSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const validate = (): string | null => {
@@ -86,6 +88,14 @@ export default function SignUpScreen({ onSignedUp, onBackToLogin }: Props) {
     );
   };
 
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    setGoogleSubmitting(true);
+    const result = await signInWithGoogle();
+    if (result.error) setError(result.error);
+    setGoogleSubmitting(false);
+  };
+
   const openWebUrl = async (url: string) => {
     const supported = await Linking.canOpenURL(url);
     if (supported) {
@@ -113,6 +123,27 @@ export default function SignUpScreen({ onSignedUp, onBackToLogin }: Props) {
           <Text className="text-sm text-gray-500 mb-6">
             You'll need an invite code from your institution to sign up.
           </Text>
+
+          <Pressable
+            onPress={handleGoogleSignIn}
+            disabled={submitting || googleSubmitting}
+            className="flex-row items-center justify-center rounded-lg border border-gray-300 bg-clinical-card py-3"
+          >
+            {googleSubmitting ? (
+              <ActivityIndicator color="#1E3A5F" />
+            ) : (
+              <>
+                <Ionicons name="logo-google" size={18} color="#4285F4" />
+                <Text className="ml-2 font-medium text-gray-700">Continue with Google</Text>
+              </>
+            )}
+          </Pressable>
+
+          <View className="flex-row items-center my-5">
+            <View className="h-px flex-1 bg-gray-300" />
+            <Text className="px-3 text-xs text-gray-500">or</Text>
+            <View className="h-px flex-1 bg-gray-300" />
+          </View>
 
           <Text className="text-xs font-medium text-gray-600 mb-1">Full Name</Text>
           <AppTextInput
@@ -220,7 +251,7 @@ export default function SignUpScreen({ onSignedUp, onBackToLogin }: Props) {
 
           <Pressable
             onPress={handleSignUp}
-            disabled={submitting}
+            disabled={submitting || googleSubmitting}
             className="bg-clinical-primary rounded-lg py-3 items-center mt-2"
           >
             {submitting ? (
