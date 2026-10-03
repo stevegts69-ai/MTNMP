@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -14,6 +16,9 @@ import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "../../store/authStore";
 import type { UserRole } from "../../types";
 
+const PRIVACY_POLICY_URL = "https://stevegts69-ai.github.io/auth-pages/privacy.html";
+const TERMS_OF_SERVICE_URL = "https://stevegts69-ai.github.io/auth-pages/terms.html";
+
 const SIGNUP_ROLES: { value: Exclude<UserRole, "admin">; label: string }[] = [
   { value: "physician", label: "Physician" },
   { value: "radiologist", label: "Radiologist" },
@@ -25,11 +30,21 @@ export default function CompleteProfileScreen() {
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState<Exclude<UserRole, "admin">>("physician");
   const [inviteCode, setInviteCode] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const openWebUrl = async (url: string) => {
+    try {
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert("Error", "Unable to open legal pages in browser.");
+    }
+  };
+
   const handleCompleteProfile = async () => {
     setError(null);
+    if (!agreedToTerms) return;
     if (!fullName.trim()) {
       setError("Enter your full name.");
       return;
@@ -132,12 +147,47 @@ export default function CompleteProfileScreen() {
             Get this from your institution's admin.
           </Text>
 
+          <View className="flex-row items-start mb-4">
+            <Pressable
+              onPress={() => setAgreedToTerms((agreed) => !agreed)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: agreedToTerms }}
+              accessibilityLabel="Agree to the Terms of Service and Privacy Policy"
+              className={`w-5 h-5 rounded border mr-3 mt-0.5 items-center justify-center ${
+                agreedToTerms
+                  ? "bg-clinical-primary border-clinical-primary"
+                  : "border-gray-400"
+              }`}
+            >
+              {agreedToTerms ? <Text className="text-white text-xs">✓</Text> : null}
+            </Pressable>
+            <Text className="text-xs text-gray-600 flex-1 leading-5">
+              I agree to the{" "}
+              <Text
+                className="text-clinical-primary font-medium"
+                onPress={() => openWebUrl(TERMS_OF_SERVICE_URL)}
+              >
+                Terms of Service
+              </Text>
+              {" "}and{" "}
+              <Text
+                className="text-clinical-primary font-medium"
+                onPress={() => openWebUrl(PRIVACY_POLICY_URL)}
+              >
+                Privacy Policy
+              </Text>
+              .
+            </Text>
+          </View>
+
           {error ? <Text className="text-clinical-danger text-sm mb-3">{error}</Text> : null}
 
           <Pressable
             onPress={handleCompleteProfile}
-            disabled={submitting}
-            className="bg-clinical-primary rounded-lg py-3 items-center mt-2"
+            disabled={submitting || !agreedToTerms}
+            className={`rounded-lg py-3 items-center mt-2 ${
+              agreedToTerms ? "bg-clinical-primary" : "bg-gray-400"
+            }`}
           >
             {submitting ? (
               <ActivityIndicator color="#fff" />
