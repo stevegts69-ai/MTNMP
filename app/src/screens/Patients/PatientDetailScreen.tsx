@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, ActivityIndicator, ScrollView, Pressable } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "../../store/authStore";
 import { logAudit } from "../../lib/audit";
-import type { Patient } from "../../types";
+import type { Patient, ToxicityAlert } from "../../types";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { PatientsStackParamList } from "../../navigation/PatientsStack";
 
@@ -19,6 +19,65 @@ export default function PatientDetailScreen({ route, navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isOffline, setIsOffline] = useState(false);
+  const [toxicityAlerts, setToxicityAlerts] = useState<ToxicityAlert[]>([]);
+  const [toxicityAlertError, setToxicityAlertError] = useState<string | null>(null);
+  const [acknowledgingId, setAcknowledgingId] = useState<string | null>(null);
+
+  const loadToxicityAlerts = useCallback(async () => {
+    const { data, error: alertQueryError } = await supabase
+      .from("toxicity_alerts")
+      .select("*")
+      .eq("patient_id", patientId)
+      .eq("acknowledged", false)
+      .order("created_at", { ascending: false });
+
+    if (alertQueryError) {
+      setToxicityAlertError(alertQueryError.message);
+      return;
+    }
+    setToxicityAlerts((data ?? []) as ToxicityAlert[]);
+    setToxicityAlertError(null);
+  }, [patientId]);
+
+  useEffect(() => {
+    loadToxicityAlerts();
+    const unsubscribe = navigation.addListener("focus", loadToxicityAlerts);
+    return unsubscribe;
+  }, [navigation, loadToxicityAlerts]);
+
+  const canAcknowledgeToxicity =
+    profile?.credential_verified === true &&
+    (profile.role === "admin" || profile.role === "physician");
+
+  const acknowledgeToxicityAlert = async (alert: ToxicityAlert) => {
+    if (!profile || !canAcknowledgeToxicity) return;
+    setAcknowledgingId(alert.id);
+    setToxicityAlertError(null);
+    const { error: updateError } = await supabase
+      .from("toxicity_alerts")
+      .update({
+        acknowledged: true,
+        acknowledged_by: profile.id,
+        acknowledged_at: new Date().toISOString(),
+      })
+      .eq("id", alert.id)
+      .eq("acknowledged", false);
+    setAcknowledgingId(null);
+
+    if (updateError) {
+      setToxicityAlertError(updateError.message);
+      return;
+    }
+
+    await logAudit({
+      userId: profile.id,
+      institutionId: profile.institution_id,
+      action: "update",
+      tableName: "toxicity_alerts",
+      recordId: alert.id,
+    });
+    setToxicityAlerts((current) => current.filter((item) => item.id !== alert.id));
+  };
 
   useEffect(() => {
     (async () => {
@@ -102,6 +161,27 @@ export default function PatientDetailScreen({ route, navigation }: Props) {
         </View>
       ) : null}
 
+      {toxicityAlertError ? (
+        <Text className="text-clinical-danger text-xs mb-3">{toxicityAlertError}</Text>
+      ) : null}
+      {toxicityAlerts.map((alert) => (
+        <View key={alert.id} className="bg-red-50 border border-red-300 rounded-lg p-4 mb-3">
+          <Text className="text-sm font-semibold text-red-800">CTCAE toxicity alert</Text>
+          <Text className="text-xs text-red-800 mt-1">{alert.event_summary}</Text>
+          {canAcknowledgeToxicity ? (
+            <Pressable
+              onPress={() => acknowledgeToxicityAlert(alert)}
+              disabled={acknowledgingId === alert.id}
+              className="self-start border border-red-700 rounded-md px-3 py-2 mt-3"
+            >
+              <Text className="text-xs font-semibold text-red-800">
+                {acknowledgingId === alert.id ? "Saving..." : "Acknowledge"}
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ))}
+
       <Text className="text-xl font-semibold text-clinical-primary mb-1">
         {patient.full_name}
       </Text>
@@ -129,9 +209,23 @@ export default function PatientDetailScreen({ route, navigation }: Props) {
 
       <Pressable
         onPress={() => navigation.navigate("PatientTreatment", { patientId: patient.id })}
-        className="mt-3 p-4 bg-clinical-card rounded-xl border border-gray-100 mb-8"
+        className="mt-3 p-4 bg-clinical-card rounded-xl border border-gray-100"
       >
         <Text className="text-clinical-primary font-medium text-center">Treatment Log</Text>
+      </Pressable>
+
+      <Pressable
+        onPress={() => navigation.navigate("DosimetryHistory", { patientId: patient.id })}
+        className="mt-3 p-4 bg-clinical-card rounded-xl border border-gray-100"
+      >
+        <Text className="text-clinical-primary font-medium text-center">Dosimetry Records</Text>
+      </Pressable>
+
+      <Pressable
+        onPress={() => navigation.navigate("ToxicityHistory", { patientId: patient.id })}
+        className="mt-3 p-4 bg-clinical-card rounded-xl border border-gray-100 mb-8"
+      >
+        <Text className="text-clinical-primary font-medium text-center">Toxicity Assessments</Text>
       </Pressable>
     </ScrollView>
   );

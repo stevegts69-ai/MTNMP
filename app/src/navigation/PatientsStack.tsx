@@ -11,6 +11,10 @@ import PatientTreatmentScreen from "../screens/Treatment/PatientTreatmentScreen"
 import NewTreatmentLogScreen from "../screens/Treatment/NewTreatmentLogScreen";
 import TreatmentLogDetailScreen from "../screens/Treatment/TreatmentLogDetailScreen";
 import NewOrganDoseScreen from "../screens/Treatment/NewOrganDoseScreen";
+import DosimetryHistoryScreen from "../screens/Dosimetry/DosimetryHistoryScreen";
+import DosimetryFormScreen from "../screens/Dosimetry/DosimetryFormScreen";
+import ToxicityAssessmentScreen from "../screens/Monitoring/ToxicityAssessmentScreen";
+import ToxicityHistoryScreen from "../screens/Monitoring/ToxicityHistoryScreen";
 
 export type PatientsStackParamList = {
   PatientList: undefined;
@@ -24,6 +28,10 @@ export type PatientsStackParamList = {
   NewTreatmentLog: { patientId: string };
   TreatmentLogDetail: { treatmentLogId: string };
   NewOrganDose: { treatmentLogId: string };
+  DosimetryHistory: { patientId: string };
+  DosimetryForm: { patientId: string };
+  ToxicityAssessment: { patientId: string };
+  ToxicityHistory: { patientId: string };
 };
 
 const Stack = createNativeStackNavigator<PatientsStackParamList>();
@@ -42,6 +50,10 @@ export default function PatientsStack() {
       <Stack.Screen name="NewTreatmentLog" component={NewTreatmentLogScreen} options={{ title: "Log Treatment" }} />
       <Stack.Screen name="TreatmentLogDetail" component={TreatmentLogDetailScreen} options={{ title: "Treatment Detail" }} />
       <Stack.Screen name="NewOrganDose" component={NewOrganDoseScreen} options={{ title: "Log Organ Dose" }} />
+      <Stack.Screen name="DosimetryHistory" component={DosimetryHistoryScreen} options={{ title: "Dosimetry History" }} />
+      <Stack.Screen name="DosimetryForm" component={DosimetryFormScreen} options={{ title: "Record Dosimetry" }} />
+      <Stack.Screen name="ToxicityAssessment" component={ToxicityAssessmentScreen} options={{ title: "Toxicity Assessment" }} />
+      <Stack.Screen name="ToxicityHistory" component={ToxicityHistoryScreen} options={{ title: "Toxicity History" }} />
     </Stack.Navigator>
   );
 }

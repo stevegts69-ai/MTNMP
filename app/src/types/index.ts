@@ -11,6 +11,24 @@ export type FileType = "DICOM" | "PNG" | "JPEG";
 export type KetosisZone = "green" | "yellow" | "red";
 export type IsotopeType = "Lu177" | "Y90" | "I131" | "Ra223" | "other";
 export type DoseUnit = "mCi" | "GBq";
+export type DosimetryCalculationMethod = "MIRD" | "voxel-based" | "Monte Carlo" | "other";
+
+export interface DosimetryImagingTimepoint {
+  label: string;
+  hours_post_injection: number;
+}
+
+export interface DosimetryOrganDose {
+  organ: string;
+  dose_gy: number;
+  tolerance_limit_gy: number | null;
+}
+
+export interface DosimetryTumorDose {
+  lesion_label: string;
+  dose_gy: number;
+  volume_cc: number | null;
+}
 
 export interface Profile {
   id: string;
@@ -74,5 +92,52 @@ export interface TreatmentLog {
   administered_date: string | null;
   administered_by: string | null;
   notes: string | null;
+  created_at: string;
+}
+
+export interface DosimetryRecord {
+  id: string;
+  patient_id: string;
+  institution_id: string;
+  cycle_number: number;
+  isotope: IsotopeType;
+  calculation_method: DosimetryCalculationMethod;
+  imaging_timepoints: DosimetryImagingTimepoint[];
+  organ_doses: DosimetryOrganDose[];
+  tumor_doses: DosimetryTumorDose[];
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export type ToxicityAssessmentType = "baseline" | "follow_up";
+
+export interface ToxicityEvent {
+  category: string;
+  term: string;
+  grade: 0 | 1 | 2 | 3 | 4 | 5;
+}
+
+export interface ToxicityAssessment {
+  id: string;
+  patient_id: string;
+  institution_id: string;
+  assessment_type: ToxicityAssessmentType;
+  cycle_number: number | null;
+  ctcae_version: string;
+  events: ToxicityEvent[];
+  assessed_by: string | null;
+  assessed_at: string;
+}
+
+export interface ToxicityAlert {
+  id: string;
+  patient_id: string;
+  institution_id: string;
+  assessment_id: string;
+  event_summary: string;
+  acknowledged: boolean;
+  acknowledged_by: string | null;
+  acknowledged_at: string | null;
   created_at: string;
 }
