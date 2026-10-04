@@ -26,11 +26,23 @@ export default function NewMetabolicLogScreen({ route, navigation }: Props) {
 
   const [glucose, setGlucose] = useState("");
   const [ketones, setKetones] = useState("");
+  const [platelets, setPlatelets] = useState("");
+  const [hemoglobin, setHemoglobin] = useState("");
+  const [creatinine, setCreatinine] = useState("");
+  const [egfr, setEgfr] = useState("");
+  const [wbc, setWbc] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const glucoseNum = glucose.trim() ? parseFloat(glucose) : null;
   const ketonesNum = ketones.trim() ? parseFloat(ketones) : null;
+  const labValues = [
+    ["Platelets", platelets],
+    ["Hemoglobin", hemoglobin],
+    ["Creatinine", creatinine],
+    ["eGFR", egfr],
+    ["WBC", wbc],
+  ] as const;
 
   const previewZone = useMemo(
     () => computeKetosisZone(glucoseNum, ketonesNum),
@@ -45,7 +57,14 @@ export default function NewMetabolicLogScreen({ route, navigation }: Props) {
       return "Ketones must be a number between 0 and 10 mmol/L.";
     }
     if (!glucose.trim() && !ketones.trim()) {
-      return "Enter at least one reading.";
+      if (labValues.every(([, value]) => !value.trim())) {
+        return "Enter at least one reading.";
+      }
+    }
+    for (const [label, value] of labValues) {
+      if (value.trim() && (!Number.isFinite(Number(value)) || Number(value) < 0)) {
+        return `${label} must be a non-negative number.`;
+      }
     }
     return null;
   };
@@ -67,6 +86,11 @@ export default function NewMetabolicLogScreen({ route, navigation }: Props) {
       institution_id: profile.institution_id,
       glucose_mmol_l: glucoseNum,
       ketones_mmol_l: ketonesNum,
+      platelets: platelets.trim() ? Number(platelets) : null,
+      hemoglobin: hemoglobin.trim() ? Number(hemoglobin) : null,
+      creatinine: creatinine.trim() ? Number(creatinine) : null,
+      egfr: egfr.trim() ? Number(egfr) : null,
+      wbc: wbc.trim() ? Number(wbc) : null,
       ketosis_zone: previewZone,
       logged_by: profile.id,
     };
@@ -121,6 +145,17 @@ export default function NewMetabolicLogScreen({ route, navigation }: Props) {
         className="border border-gray-300 rounded-lg px-4 py-3 mb-4 bg-clinical-card"
       />
 
+      <Text className="text-sm font-semibold text-gray-700 mt-2 mb-1">Additional Lab Results</Text>
+      <Text className="text-xs text-gray-400 mb-3">
+        Optional. Reference bands are generic and should be verified against your institution's ranges.
+      </Text>
+
+      <LabInput label="Platelets (10^9/L)" value={platelets} onChangeText={setPlatelets} />
+      <LabInput label="Hemoglobin (g/dL)" value={hemoglobin} onChangeText={setHemoglobin} />
+      <LabInput label="Creatinine (mg/dL)" value={creatinine} onChangeText={setCreatinine} />
+      <LabInput label="eGFR (mL/min/1.73 m2)" value={egfr} onChangeText={setEgfr} />
+      <LabInput label="WBC (10^9/L)" value={wbc} onChangeText={setWbc} />
+
       <Text className="text-xs font-medium text-gray-600 mb-1">Ketones (mmol/L)</Text>
       <AppTextInput
         value={ketones}
@@ -158,5 +193,28 @@ export default function NewMetabolicLogScreen({ route, navigation }: Props) {
         )}
       </Pressable>
     </ScrollView>
+  );
+}
+
+function LabInput({
+  label,
+  value,
+  onChangeText,
+}: {
+  label: string;
+  value: string;
+  onChangeText: (value: string) => void;
+}) {
+  return (
+    <>
+      <Text className="text-xs font-medium text-gray-600 mb-1">{label}</Text>
+      <AppTextInput
+        value={value}
+        onChangeText={onChangeText}
+        keyboardType="decimal-pad"
+        placeholder="Optional"
+        className="border border-gray-300 rounded-lg px-4 py-3 mb-4 bg-clinical-card"
+      />
+    </>
   );
 }

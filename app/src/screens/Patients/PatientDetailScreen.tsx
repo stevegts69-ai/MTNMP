@@ -183,6 +183,20 @@ export default function PatientDetailScreen({ route, navigation }: Props) {
       ))}
 
       <Text className="text-xl font-semibold text-clinical-primary mb-1">
+
+            <Pressable
+              onPress={() => navigation.navigate("DischargeChecklist", { patientId: patient.id })}
+              className="mt-3 p-4 bg-clinical-card rounded-xl border border-gray-100"
+            >
+              <Text className="text-clinical-primary font-medium text-center">Discharge Checklist</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => navigation.navigate("PatientInstructions", { patientId: patient.id })}
+              className="mt-3 p-4 bg-clinical-card rounded-xl border border-gray-100 mb-8"
+            >
+              <Text className="text-clinical-primary font-medium text-center">Patient Instructions</Text>
+            </Pressable>
         {patient.full_name}
       </Text>
       <Text className="text-sm text-gray-500 mb-6">MRN: {patient.mrn}</Text>
@@ -204,6 +218,13 @@ export default function PatientDetailScreen({ route, navigation }: Props) {
         onPress={() => navigation.navigate("PatientMetabolic", { patientId: patient.id })}
         className="mt-3 p-4 bg-clinical-card rounded-xl border border-gray-100"
       >
+
+      <Pressable
+        onPress={() => navigation.navigate("CycleSchedule")}
+        className="mt-3 p-4 bg-clinical-card rounded-xl border border-gray-100 mb-8"
+      >
+        <Text className="text-clinical-primary font-medium text-center">Institution Cycle Calendar</Text>
+      </Pressable>
         <Text className="text-clinical-primary font-medium text-center">Metabolic Monitoring</Text>
       </Pressable>
 
@@ -223,9 +244,23 @@ export default function PatientDetailScreen({ route, navigation }: Props) {
 
       <Pressable
         onPress={() => navigation.navigate("ToxicityHistory", { patientId: patient.id })}
-        className="mt-3 p-4 bg-clinical-card rounded-xl border border-gray-100 mb-8"
+        className="mt-3 p-4 bg-clinical-card rounded-xl border border-gray-100"
       >
         <Text className="text-clinical-primary font-medium text-center">Toxicity Assessments</Text>
+      </Pressable>
+
+      <Pressable
+        onPress={() => navigation.navigate("TumorBoardReport", { patientId: patient.id })}
+        className="mt-3 p-4 bg-clinical-primary rounded-xl mb-8"
+      >
+        <Text className="text-white font-medium text-center">Tumor Board Report</Text>
+      </Pressable>
+
+      <Pressable
+        onPress={() => navigation.navigate("ResponseAssessment", { patientId: patient.id })}
+        className="mt-3 p-4 bg-clinical-card rounded-xl border border-gray-100"
+      >
+        <Text className="text-clinical-primary font-medium text-center">Response Assessment</Text>
       </Pressable>
     </ScrollView>
   );

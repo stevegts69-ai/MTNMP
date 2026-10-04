@@ -13,6 +13,7 @@ import { useAuthStore } from "../../store/authStore";
 import { logAudit } from "../../lib/audit";
 import { useOfflineQueueStore } from "../../store/offlineQueueStore";
 import NetInfo from "@react-native-community/netinfo";
+import { calculateNextCycleDueDate } from "../../lib/cycleSchedule";
 import type { IsotopeType, DoseUnit } from "../../types";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { PatientsStackParamList } from "../../navigation/PatientsStack";
@@ -33,6 +34,9 @@ export default function NewTreatmentLogScreen({ route, navigation }: Props) {
   const [doseUnit, setDoseUnit] = useState<DoseUnit>("mCi");
   const [dosimetrySource, setDosimetrySource] = useState("");
   const [administeredDate, setAdministeredDate] = useState("");
+  const [cycleNumber, setCycleNumber] = useState("");
+  const [totalPlannedCycles, setTotalPlannedCycles] = useState("");
+  const [cycleIntervalDays, setCycleIntervalDays] = useState("");
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +59,22 @@ export default function NewTreatmentLogScreen({ route, navigation }: Props) {
       if (!pattern.test(administeredDate.trim())) {
         return "Administered date must be in YYYY-MM-DD format.";
       }
+    }
+    for (const [label, value] of [
+      ["Cycle number", cycleNumber],
+      ["Total planned cycles", totalPlannedCycles],
+      ["Cycle interval", cycleIntervalDays],
+    ]) {
+      if (value.trim() && (!Number.isInteger(Number(value)) || Number(value) < 1)) {
+        return `${label} must be a positive whole number.`;
+      }
+    }
+    if (
+      cycleNumber.trim() &&
+      totalPlannedCycles.trim() &&
+      Number(cycleNumber) > Number(totalPlannedCycles)
+    ) {
+      return "Cycle number cannot exceed total planned cycles.";
     }
     return null;
   };
@@ -80,6 +100,9 @@ export default function NewTreatmentLogScreen({ route, navigation }: Props) {
       dose_unit: doseAdministered.trim() ? doseUnit : null,
       dosimetry_source: dosimetrySource.trim() || null,
       administered_date: administeredDate.trim() || null,
+      cycle_number: cycleNumber.trim() ? Number(cycleNumber) : null,
+      total_planned_cycles: totalPlannedCycles.trim() ? Number(totalPlannedCycles) : null,
+      cycle_interval_days: cycleIntervalDays.trim() ? Number(cycleIntervalDays) : null,
       administered_by: profile.id,
       notes: notes.trim() || null,
     };
@@ -195,6 +218,54 @@ export default function NewTreatmentLogScreen({ route, navigation }: Props) {
         placeholder="YYYY-MM-DD"
         className="border border-gray-300 rounded-lg px-4 py-3 mb-4 bg-clinical-card"
       />
+
+      <Text className="text-sm font-semibold text-gray-700 mb-2">Cycle Scheduling (Optional)</Text>
+      <Text className="text-xs text-gray-400 mb-3">
+        Enter protocol cycle details when applicable. The next-cycle date is displayed by simple date arithmetic only.
+      </Text>
+      <View className="flex-row">
+        <View className="flex-1 mr-2">
+          <Text className="text-xs font-medium text-gray-600 mb-1">Cycle Number</Text>
+          <AppTextInput
+            value={cycleNumber}
+            onChangeText={setCycleNumber}
+            keyboardType="number-pad"
+            placeholder="e.g. 1"
+            className="border border-gray-300 rounded-lg px-3 py-3 mb-3 bg-clinical-card"
+          />
+        </View>
+        <View className="flex-1 ml-2">
+          <Text className="text-xs font-medium text-gray-600 mb-1">Total Planned</Text>
+          <AppTextInput
+            value={totalPlannedCycles}
+            onChangeText={setTotalPlannedCycles}
+            keyboardType="number-pad"
+            placeholder="Optional"
+            className="border border-gray-300 rounded-lg px-3 py-3 mb-3 bg-clinical-card"
+          />
+        </View>
+      </View>
+      <Text className="text-xs font-medium text-gray-600 mb-1">Cycle Interval (days)</Text>
+      <AppTextInput
+        value={cycleIntervalDays}
+        onChangeText={setCycleIntervalDays}
+        keyboardType="number-pad"
+        placeholder="Optional"
+        className="border border-gray-300 rounded-lg px-4 py-3 mb-2 bg-clinical-card"
+      />
+      {calculateNextCycleDueDate(
+        administeredDate.trim() || null,
+        cycleIntervalDays.trim() ? Number(cycleIntervalDays) : null
+      ) ? (
+        <Text className="text-sm text-clinical-primary mb-4">
+          Next cycle due (display only): {calculateNextCycleDueDate(
+            administeredDate.trim() || null,
+            cycleIntervalDays.trim() ? Number(cycleIntervalDays) : null
+          )}
+        </Text>
+      ) : (
+        <View className="mb-4" />
+      )}
 
       <Text className="text-xs font-medium text-gray-600 mb-1">Notes</Text>
       <AppTextInput

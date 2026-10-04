@@ -15,6 +15,11 @@ import DosimetryHistoryScreen from "../screens/Dosimetry/DosimetryHistoryScreen"
 import DosimetryFormScreen from "../screens/Dosimetry/DosimetryFormScreen";
 import ToxicityAssessmentScreen from "../screens/Monitoring/ToxicityAssessmentScreen";
 import ToxicityHistoryScreen from "../screens/Monitoring/ToxicityHistoryScreen";
+import TumorBoardReportScreen from "../screens/Monitoring/TumorBoardReportScreen";
+import ResponseAssessmentScreen from "../screens/Monitoring/ResponseAssessmentScreen";
+import CycleScheduleScreen from "../screens/Treatment/CycleScheduleScreen";
+import DischargeChecklistScreen from "../screens/Treatment/DischargeChecklistScreen";
+import PatientInstructionsScreen from "../screens/Treatment/PatientInstructionsScreen";
 
 export type PatientsStackParamList = {
   PatientList: undefined;
@@ -32,6 +37,11 @@ export type PatientsStackParamList = {
   DosimetryForm: { patientId: string };
   ToxicityAssessment: { patientId: string };
   ToxicityHistory: { patientId: string };
+  TumorBoardReport: { patientId: string };
+  ResponseAssessment: { patientId: string };
+  CycleSchedule: undefined;
+  DischargeChecklist: { patientId: string };
+  PatientInstructions: { patientId: string };
 };
 
 const Stack = createNativeStackNavigator<PatientsStackParamList>();
@@ -54,6 +64,11 @@ export default function PatientsStack() {
       <Stack.Screen name="DosimetryForm" component={DosimetryFormScreen} options={{ title: "Record Dosimetry" }} />
       <Stack.Screen name="ToxicityAssessment" component={ToxicityAssessmentScreen} options={{ title: "Toxicity Assessment" }} />
       <Stack.Screen name="ToxicityHistory" component={ToxicityHistoryScreen} options={{ title: "Toxicity History" }} />
+      <Stack.Screen name="TumorBoardReport" component={TumorBoardReportScreen} options={{ title: "Tumor Board Report" }} />
+      <Stack.Screen name="ResponseAssessment" component={ResponseAssessmentScreen} options={{ title: "Response Assessment" }} />
+      <Stack.Screen name="CycleSchedule" component={CycleScheduleScreen} options={{ title: "Institution Cycle Calendar" }} />
+      <Stack.Screen name="DischargeChecklist" component={DischargeChecklistScreen} options={{ title: "Discharge Checklist" }} />
+      <Stack.Screen name="PatientInstructions" component={PatientInstructionsScreen} options={{ title: "Patient Instructions" }} />
     </Stack.Navigator>
   );
 }
