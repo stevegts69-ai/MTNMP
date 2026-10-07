@@ -166,7 +166,7 @@ export default function PatientDetailScreen({ route, navigation }: Props) {
 
   return (
     <View className="flex-1 bg-clinical-bg">
-      <View className="px-5 pt-5 pb-4 bg-white border-b border-gray-200">
+      <View className="px-5 pt-5 pb-6 bg-white border-b border-gray-200">
         {isOffline ? (
           <View className="bg-clinical-warn/10 border border-clinical-warn rounded-lg px-3 py-2 mb-3">
             <Text className="text-xs text-clinical-warn text-center">
@@ -174,21 +174,16 @@ export default function PatientDetailScreen({ route, navigation }: Props) {
             </Text>
           </View>
         ) : null}
-        <Text className="text-xl font-semibold text-clinical-primary mb-1">
+        <Text className="text-2xl font-bold text-clinical-primary mb-1">
           {patient.full_name}
         </Text>
-        <Text className="text-sm text-gray-500 mb-3">MRN: {patient.mrn}</Text>
-        <View className="flex-row flex-wrap">
-          <View className="w-1/2 pr-3">
-            <InfoRow label="Date of Birth" value={patient.date_of_birth ?? "—"} />
-            <InfoRow label="Cancer Type" value={patient.cancer_type ?? "—"} />
-            <InfoRow label="Record Created" value={new Date(patient.created_at).toLocaleDateString()} />
-          </View>
-          <View className="w-1/2 pl-3">
-            <InfoRow label="Sex" value={patient.sex ?? "—"} />
-            <InfoRow label="Cancer Stage" value={patient.cancer_stage ?? "—"} />
-          </View>
-        </View>
+        <Text className="text-xs text-gray-500 mb-3">MRN: {patient.mrn}</Text>
+        <View className="h-px bg-gray-200 mb-1" />
+        <InfoRow label="Date of Birth" value={patient.date_of_birth ?? "—"} />
+        <InfoRow label="Sex" value={patient.sex ?? "—"} />
+        <InfoRow label="Cancer Type" value={patient.cancer_type ?? "—"} />
+        <InfoRow label="Cancer Stage" value={patient.cancer_stage ?? "—"} />
+        <InfoRow label="Record Created" value={new Date(patient.created_at).toLocaleDateString()} />
       </View>
 
       <ScrollView
@@ -238,9 +233,9 @@ export default function PatientDetailScreen({ route, navigation }: Props) {
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <View className="flex-row justify-between py-3 border-b border-gray-100">
-      <Text className="text-sm text-gray-500">{label}</Text>
-      <Text className="text-sm text-gray-800 font-medium">{value}</Text>
+    <View className="min-h-11 flex-row items-center border-b border-gray-100 py-3">
+      <Text className="w-2/5 text-xs text-gray-500">{label}</Text>
+      <Text className="flex-1 text-right text-sm text-gray-900 font-medium">{value}</Text>
     </View>
   );
 }
