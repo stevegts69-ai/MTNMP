@@ -151,118 +151,88 @@ export default function PatientDetailScreen({ route, navigation }: Props) {
     );
   }
 
+  const featureLinks = [
+    { label: "Imaging", onPress: () => navigation.navigate("PatientImaging", { patientId: patient.id }) },
+    { label: "Metabolic Monitoring", onPress: () => navigation.navigate("PatientMetabolic", { patientId: patient.id }) },
+    { label: "Treatment Log", onPress: () => navigation.navigate("PatientTreatment", { patientId: patient.id }) },
+    { label: "Dosimetry Records", onPress: () => navigation.navigate("DosimetryHistory", { patientId: patient.id }) },
+    { label: "Toxicity Assessments", onPress: () => navigation.navigate("ToxicityHistory", { patientId: patient.id }) },
+    { label: "Response Assessment", onPress: () => navigation.navigate("ResponseAssessment", { patientId: patient.id }) },
+    { label: "Discharge Checklist", onPress: () => navigation.navigate("DischargeChecklist", { patientId: patient.id }) },
+    { label: "Patient Instructions", onPress: () => navigation.navigate("PatientInstructions", { patientId: patient.id }) },
+    { label: "Institution Cycle Calendar", onPress: () => navigation.navigate("CycleSchedule") },
+    { label: "Tumor Board Report", onPress: () => navigation.navigate("TumorBoardReport", { patientId: patient.id }) },
+  ];
+
   return (
-    <ScrollView className="flex-1 bg-clinical-bg px-5 pt-5">
-      {isOffline ? (
-        <View className="bg-clinical-warn/10 border border-clinical-warn rounded-lg px-3 py-2 mb-4">
-          <Text className="text-xs text-clinical-warn text-center">
-            Offline — showing cached patient details
-          </Text>
+    <View className="flex-1 bg-clinical-bg">
+      <View className="px-5 pt-5 pb-4 bg-white border-b border-gray-200">
+        {isOffline ? (
+          <View className="bg-clinical-warn/10 border border-clinical-warn rounded-lg px-3 py-2 mb-3">
+            <Text className="text-xs text-clinical-warn text-center">
+              Offline — showing cached patient details
+            </Text>
+          </View>
+        ) : null}
+        <Text className="text-xl font-semibold text-clinical-primary mb-1">
+          {patient.full_name}
+        </Text>
+        <Text className="text-sm text-gray-500 mb-3">MRN: {patient.mrn}</Text>
+        <View className="flex-row flex-wrap">
+          <View className="w-1/2 pr-3">
+            <InfoRow label="Date of Birth" value={patient.date_of_birth ?? "—"} />
+            <InfoRow label="Cancer Type" value={patient.cancer_type ?? "—"} />
+            <InfoRow label="Record Created" value={new Date(patient.created_at).toLocaleDateString()} />
+          </View>
+          <View className="w-1/2 pl-3">
+            <InfoRow label="Sex" value={patient.sex ?? "—"} />
+            <InfoRow label="Cancer Stage" value={patient.cancer_stage ?? "—"} />
+          </View>
         </View>
-      ) : null}
+      </View>
 
-      {toxicityAlertError ? (
-        <Text className="text-clinical-danger text-xs mb-3">{toxicityAlertError}</Text>
-      ) : null}
-      {toxicityAlerts.map((alert) => (
-        <View key={alert.id} className="bg-red-50 border border-red-300 rounded-lg p-4 mb-3">
-          <Text className="text-sm font-semibold text-red-800">CTCAE toxicity alert</Text>
-          <Text className="text-xs text-red-800 mt-1">{alert.event_summary}</Text>
-          {canAcknowledgeToxicity ? (
-            <Pressable
-              onPress={() => acknowledgeToxicityAlert(alert)}
-              disabled={acknowledgingId === alert.id}
-              className="self-start border border-red-700 rounded-md px-3 py-2 mt-3"
-            >
-              <Text className="text-xs font-semibold text-red-800">
-                {acknowledgingId === alert.id ? "Saving..." : "Acknowledge"}
-              </Text>
-            </Pressable>
-          ) : null}
-        </View>
-      ))}
-
-      <Text className="text-xl font-semibold text-clinical-primary mb-1">
-
-            <Pressable
-              onPress={() => navigation.navigate("DischargeChecklist", { patientId: patient.id })}
-              className="mt-3 p-4 bg-clinical-card rounded-xl border border-gray-100"
-            >
-              <Text className="text-clinical-primary font-medium text-center">Discharge Checklist</Text>
-            </Pressable>
-
-            <Pressable
-              onPress={() => navigation.navigate("PatientInstructions", { patientId: patient.id })}
-              className="mt-3 p-4 bg-clinical-card rounded-xl border border-gray-100 mb-8"
-            >
-              <Text className="text-clinical-primary font-medium text-center">Patient Instructions</Text>
-            </Pressable>
-        {patient.full_name}
-      </Text>
-      <Text className="text-sm text-gray-500 mb-6">MRN: {patient.mrn}</Text>
-
-      <InfoRow label="Date of Birth" value={patient.date_of_birth ?? "—"} />
-      <InfoRow label="Sex" value={patient.sex ?? "—"} />
-      <InfoRow label="Cancer Type" value={patient.cancer_type ?? "—"} />
-      <InfoRow label="Cancer Stage" value={patient.cancer_stage ?? "—"} />
-      <InfoRow label="Record Created" value={new Date(patient.created_at).toLocaleDateString()} />
-
-      <Pressable
-        onPress={() => navigation.navigate("PatientImaging", { patientId: patient.id })}
-        className="mt-6 p-4 bg-clinical-card rounded-xl border border-gray-100"
+      <ScrollView
+        className="flex-1 px-5 pt-4"
+        contentContainerStyle={{ paddingBottom: 28 }}
+        showsVerticalScrollIndicator
       >
-        <Text className="text-clinical-primary font-medium text-center">View Imaging</Text>
-      </Pressable>
+        {toxicityAlertError ? (
+          <Text className="text-clinical-danger text-xs mb-3">{toxicityAlertError}</Text>
+        ) : null}
+        {toxicityAlerts.map((alert) => (
+          <View key={alert.id} className="bg-red-50 border border-red-300 rounded-lg p-4 mb-3">
+            <Text className="text-sm font-semibold text-red-800">CTCAE toxicity alert</Text>
+            <Text className="text-xs text-red-800 mt-1">{alert.event_summary}</Text>
+            {canAcknowledgeToxicity ? (
+              <Pressable
+                onPress={() => acknowledgeToxicityAlert(alert)}
+                disabled={acknowledgingId === alert.id}
+                className="self-start border border-red-700 rounded-md px-3 py-2 mt-3"
+              >
+                <Text className="text-xs font-semibold text-red-800">
+                  {acknowledgingId === alert.id ? "Saving..." : "Acknowledge"}
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ))}
 
-      <Pressable
-        onPress={() => navigation.navigate("PatientMetabolic", { patientId: patient.id })}
-        className="mt-3 p-4 bg-clinical-card rounded-xl border border-gray-100"
-      >
-
-      <Pressable
-        onPress={() => navigation.navigate("CycleSchedule")}
-        className="mt-3 p-4 bg-clinical-card rounded-xl border border-gray-100 mb-8"
-      >
-        <Text className="text-clinical-primary font-medium text-center">Institution Cycle Calendar</Text>
-      </Pressable>
-        <Text className="text-clinical-primary font-medium text-center">Metabolic Monitoring</Text>
-      </Pressable>
-
-      <Pressable
-        onPress={() => navigation.navigate("PatientTreatment", { patientId: patient.id })}
-        className="mt-3 p-4 bg-clinical-card rounded-xl border border-gray-100"
-      >
-        <Text className="text-clinical-primary font-medium text-center">Treatment Log</Text>
-      </Pressable>
-
-      <Pressable
-        onPress={() => navigation.navigate("DosimetryHistory", { patientId: patient.id })}
-        className="mt-3 p-4 bg-clinical-card rounded-xl border border-gray-100"
-      >
-        <Text className="text-clinical-primary font-medium text-center">Dosimetry Records</Text>
-      </Pressable>
-
-      <Pressable
-        onPress={() => navigation.navigate("ToxicityHistory", { patientId: patient.id })}
-        className="mt-3 p-4 bg-clinical-card rounded-xl border border-gray-100"
-      >
-        <Text className="text-clinical-primary font-medium text-center">Toxicity Assessments</Text>
-      </Pressable>
-
-      <Pressable
-        onPress={() => navigation.navigate("TumorBoardReport", { patientId: patient.id })}
-        className="mt-3 p-4 bg-clinical-primary rounded-xl mb-8"
-      >
-        <Text className="text-white font-medium text-center">Tumor Board Report</Text>
-      </Pressable>
-
-      <Pressable
-        onPress={() => navigation.navigate("ResponseAssessment", { patientId: patient.id })}
-        className="mt-3 p-4 bg-clinical-card rounded-xl border border-gray-100"
-      >
-        <Text className="text-clinical-primary font-medium text-center">Response Assessment</Text>
-      </Pressable>
-    </ScrollView>
+        <Text className="text-sm font-semibold text-gray-600 mb-2">Patient workspace</Text>
+        {featureLinks.map((feature) => (
+          <Pressable
+            key={feature.label}
+            onPress={feature.onPress}
+            accessibilityRole="button"
+            className="w-full min-h-14 flex-row items-center justify-between px-4 py-4 mb-2 bg-clinical-card border border-gray-200 rounded-lg"
+          >
+            <Text className="text-sm font-medium text-clinical-primary flex-1">
+              {feature.label}
+            </Text>
+            <Text className="text-lg text-gray-400 ml-3">›</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+    </View>
   );
 }
 
