@@ -14,6 +14,9 @@ import { logAudit } from "../../lib/audit";
 import { useOfflineQueueStore } from "../../store/offlineQueueStore";
 import NetInfo from "@react-native-community/netinfo";
 import { computeKetosisZone, ZONE_COLORS, ZONE_LABELS } from "../../lib/ketosis";
+import { getGrade3LabEvents, summarizeGrade3LabEvents } from "../../lib/labToxicity";
+import { createToxicityAssessmentWithAlerts } from "../../lib/toxicityAssessment";
+import type { LabReferenceRange, LabType, TreatmentLog } from "../../types";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { PatientsStackParamList } from "../../navigation/PatientsStack";
 
@@ -125,6 +128,70 @@ export default function NewMetabolicLogScreen({ route, navigation }: Props) {
       tableName: "metabolic_logs",
       recordId: inserted?.id,
     });
+
+    const enteredLabValues: Partial<Record<LabType, number | null>> = {
+      platelets: payload.platelets,
+      hemoglobin: payload.hemoglobin,
+      creatinine: payload.creatinine,
+      egfr: payload.egfr,
+      wbc: payload.wbc,
+    };
+    const hasEnteredLabs = Object.values(enteredLabValues).some((value) => value !== null);
+
+    if (hasEnteredLabs) {
+      const { data: rangeData, error: rangeError } = await supabase
+        .from("lab_reference_ranges")
+        .select("lab_type, grade3_threshold, unit, abnormal_direction");
+
+      if (rangeError) {
+        Alert.alert(
+          "Reading saved; threshold check unavailable",
+          `The lab reading was saved, but Grade 3+ alert processing could not load reference ranges: ${rangeError.message}`
+        );
+        navigation.popTo("PatientDetail", { patientId });
+        return;
+      }
+
+      const derivedEvents = getGrade3LabEvents(
+        enteredLabValues,
+        (rangeData ?? []) as LabReferenceRange[]
+      );
+
+      if (derivedEvents.length > 0) {
+        const { data: cycleData } = await supabase
+          .from("treatment_logs")
+          .select("cycle_number")
+          .eq("patient_id", patientId)
+          .not("cycle_number", "is", null)
+          .order("administered_date", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const cycleNumber = (cycleData as Pick<TreatmentLog, "cycle_number"> | null)?.cycle_number ?? null;
+        const result = await createToxicityAssessmentWithAlerts({
+          patientId,
+          institutionId: profile.institution_id,
+          assessedBy: profile.id,
+          assessmentType: cycleNumber === null ? "baseline" : "follow_up",
+          cycleNumber,
+          events: derivedEvents,
+          eventSummary: summarizeGrade3LabEvents(derivedEvents),
+        });
+
+        if (result.error) {
+          Alert.alert(
+            "Reading saved; toxicity alert failed",
+            `The lab reading was saved, but the derived toxicity record/alert could not be completed: ${result.error}`
+          );
+          navigation.popTo("PatientDetail", { patientId });
+          return;
+        }
+
+        if (result.alertId) {
+          navigation.popTo("PatientDetail", { patientId });
+          return;
+        }
+      }
+    }
 
     Alert.alert("Reading logged", "The metabolic reading has been saved.");
     navigation.goBack();

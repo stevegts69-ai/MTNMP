@@ -159,6 +159,7 @@ export default function PatientDetailScreen({ route, navigation }: Props) {
     { label: "Toxicity Assessments", onPress: () => navigation.navigate("ToxicityHistory", { patientId: patient.id }) },
     { label: "Response Assessment", onPress: () => navigation.navigate("ResponseAssessment", { patientId: patient.id }) },
     { label: "Discharge Checklist", onPress: () => navigation.navigate("DischargeChecklist", { patientId: patient.id }) },
+    { label: "Patient-Reported Exposure Log", onPress: () => navigation.navigate("ExposureLog", { patientId: patient.id }) },
     { label: "Patient Instructions", onPress: () => navigation.navigate("PatientInstructions", { patientId: patient.id }) },
     { label: "Institution Cycle Calendar", onPress: () => navigation.navigate("CycleSchedule") },
     { label: "Tumor Board Report", onPress: () => navigation.navigate("TumorBoardReport", { patientId: patient.id }) },

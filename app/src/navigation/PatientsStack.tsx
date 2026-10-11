@@ -20,6 +20,7 @@ import ResponseAssessmentScreen from "../screens/Monitoring/ResponseAssessmentSc
 import CycleScheduleScreen from "../screens/Treatment/CycleScheduleScreen";
 import DischargeChecklistScreen from "../screens/Treatment/DischargeChecklistScreen";
 import PatientInstructionsScreen from "../screens/Treatment/PatientInstructionsScreen";
+import ExposureLogScreen from "../screens/Treatment/ExposureLogScreen";
 
 export type PatientsStackParamList = {
   PatientList: undefined;
@@ -42,6 +43,7 @@ export type PatientsStackParamList = {
   CycleSchedule: undefined;
   DischargeChecklist: { patientId: string };
   PatientInstructions: { patientId: string };
+  ExposureLog: { patientId: string };
 };
 
 const Stack = createNativeStackNavigator<PatientsStackParamList>();
@@ -69,6 +71,7 @@ export default function PatientsStack() {
       <Stack.Screen name="CycleSchedule" component={CycleScheduleScreen} options={{ title: "Institution Cycle Calendar" }} />
       <Stack.Screen name="DischargeChecklist" component={DischargeChecklistScreen} options={{ title: "Discharge Checklist" }} />
       <Stack.Screen name="PatientInstructions" component={PatientInstructionsScreen} options={{ title: "Patient Instructions" }} />
+      <Stack.Screen name="ExposureLog" component={ExposureLogScreen} options={{ title: "Patient-Reported Exposure Log" }} />
     </Stack.Navigator>
   );
 }

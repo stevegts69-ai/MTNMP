@@ -9,8 +9,7 @@ import {
   View,
 } from "react-native";
 import AppTextInput from "../../components/AppTextInput";
-import { logAudit } from "../../lib/audit";
-import { supabase } from "../../lib/supabase";
+import { createToxicityAssessmentWithAlerts } from "../../lib/toxicityAssessment";
 import { useAuthStore } from "../../store/authStore";
 import type { ToxicityAssessmentType, ToxicityEvent } from "../../types";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -89,73 +88,21 @@ export default function ToxicityAssessmentScreen({ route, navigation }: Props) {
     }
 
     setSubmitting(true);
-    try {
-      const { data: assessment, error: assessmentError } = await supabase
-        .from("toxicity_assessments")
-        .insert({
-          patient_id: patientId,
-          institution_id: profile.institution_id,
-          assessment_type: assessmentType,
-          cycle_number: cycle,
-          ctcae_version: "5.0",
-          events,
-          assessed_by: profile.id,
-        })
-        .select("id")
-        .single();
+    const result = await createToxicityAssessmentWithAlerts({
+      patientId,
+      institutionId: profile.institution_id,
+      assessedBy: profile.id,
+      assessmentType,
+      cycleNumber: cycle,
+      events,
+    });
+    setSubmitting(false);
 
-      if (assessmentError) {
-        setError(assessmentError.message);
-        return;
-      }
-
-      await logAudit({
-        userId: profile.id,
-        institutionId: profile.institution_id,
-        action: "create",
-        tableName: "toxicity_assessments",
-        recordId: assessment.id,
-      });
-
-      const severeEvents = events.filter((event) => event.grade >= 3);
-      if (severeEvents.length > 0) {
-        const eventSummary = severeEvents
-          .map((event) => `${event.category}: ${event.term} (Grade ${event.grade})`)
-          .join("; ");
-        const { data: alert, error: alertError } = await supabase
-          .from("toxicity_alerts")
-          .insert({
-            patient_id: patientId,
-            institution_id: profile.institution_id,
-            assessment_id: assessment.id,
-            event_summary: eventSummary,
-          })
-          .select("id")
-          .single();
-
-        if (alertError) {
-          setError(`Assessment saved, but the toxicity alert could not be created: ${alertError.message}`);
-          return;
-        }
-        await logAudit({
-          userId: profile.id,
-          institutionId: profile.institution_id,
-          action: "create",
-          tableName: "toxicity_alerts",
-          recordId: alert.id,
-        });
-      }
-
-      navigation.navigate("ToxicityHistory", { patientId });
-    } catch (saveError) {
-      setError(
-        saveError instanceof Error
-          ? saveError.message
-          : "Unable to save the toxicity assessment. Please try again."
-      );
-    } finally {
-      setSubmitting(false);
+    if (result.error) {
+      setError(result.error);
+      return;
     }
+    navigation.navigate("ToxicityHistory", { patientId });
   };
 
   return (

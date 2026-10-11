@@ -6,7 +6,7 @@ import PatientsStack from "./PatientsStack";
 import MonitoringStack from "./MonitoringStack";
 import SyncStatusBanner from "../components/SyncStatusBanner";
 import { useAuthStore } from "../store/authStore";
-import AdminApprovalScreen from "../screens/Admin/AdminApprovalScreen";
+import AdminStack from "./AdminStack";
 
 // Imaging, Metabolic, and Treatment are deliberately NOT top-level tabs —
 // that data is patient-specific, so those features live inside a patient's
@@ -30,7 +30,7 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export default function MainTabs() {
   const profile = useAuthStore((s) => s.profile);
-  const isAdmin = profile?.role === "admin";
+  const isAdmin = profile?.role === "admin" && profile.credential_verified;
 
   return (
     <View style={{ flex: 1 }}>
@@ -52,7 +52,13 @@ export default function MainTabs() {
       >
         <Tab.Screen name="Patients" component={PatientsStack} />
         <Tab.Screen name="Monitoring" component={MonitoringStack} />
-        {isAdmin ? <Tab.Screen name="Admin" component={AdminApprovalScreen} /> : null}
+        {isAdmin ? (
+          <Tab.Screen
+            name="Admin"
+            component={AdminStack}
+            options={{ headerShown: false, title: "Admin" }}
+          />
+        ) : null}
       </Tab.Navigator>
     </View>
   );

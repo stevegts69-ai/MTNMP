@@ -4,8 +4,12 @@ import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "../../store/authStore";
 import { logAudit } from "../../lib/audit";
 import type { Profile } from "../../types";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { AdminStackParamList } from "../../navigation/AdminStack";
 
-export default function AdminApprovalScreen() {
+type Props = NativeStackScreenProps<AdminStackParamList, "AdminApproval">;
+
+export default function AdminApprovalScreen({ navigation }: Props) {
   const profile = useAuthStore((s) => s.profile);
   const [pending, setPending] = useState<Profile[]>([]);
   const [active, setActive] = useState<Profile[]>([]);
@@ -127,6 +131,12 @@ export default function AdminApprovalScreen() {
 
   return (
     <View className="flex-1 bg-clinical-bg px-4 pt-4">
+      <Pressable
+        onPress={() => navigation.navigate("InstitutionContentManagement")}
+        className="bg-clinical-primary rounded-lg py-3 items-center mb-4"
+      >
+        <Text className="text-white font-medium">Manage Institution Content</Text>
+      </Pressable>
       <FlatList
         data={pending}
         keyExtractor={(item) => item.id}
