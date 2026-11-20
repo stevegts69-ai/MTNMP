@@ -12,7 +12,7 @@ Sentry.init({
   tracesSampleRate: 1.0, 
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1.0,
-  integrations: [Sentry.mobileReplayIntegration()],
+  integrations: [Sentry.mobileReplayIntegration({ maskAllText: true })],
 
   // 4. Client-side scrubbing before data ever leaves the mobile device
   beforeSend(event) {

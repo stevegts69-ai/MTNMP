@@ -4,6 +4,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "../../store/authStore";
 import { logAudit } from "../../lib/audit";
+import { getOrCreatePatientChannel, type ChatProfile } from "../../lib/chat";
+import { useChatStore } from "../../store/chatStore";
 import type { Patient, ToxicityAlert } from "../../types";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { PatientsStackParamList } from "../../navigation/PatientsStack";
@@ -22,6 +24,8 @@ export default function PatientDetailScreen({ route, navigation }: Props) {
   const [toxicityAlerts, setToxicityAlerts] = useState<ToxicityAlert[]>([]);
   const [toxicityAlertError, setToxicityAlertError] = useState<string | null>(null);
   const [acknowledgingId, setAcknowledgingId] = useState<string | null>(null);
+  const [openingChat, setOpeningChat] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
 
   const loadToxicityAlerts = useCallback(async () => {
     const { data, error: alertQueryError } = await supabase
@@ -77,6 +81,24 @@ export default function PatientDetailScreen({ route, navigation }: Props) {
       recordId: alert.id,
     });
     setToxicityAlerts((current) => current.filter((item) => item.id !== alert.id));
+  };
+
+  const openTeamDiscussion = async () => {
+    if (!profile?.credential_verified || !profile.is_active || !patient) return;
+    setOpeningChat(true);
+    setChatError(null);
+    try {
+      const channel = await getOrCreatePatientChannel(profile as ChatProfile, patient.id);
+      await useChatStore.getState().startUnreadTracking(profile as ChatProfile);
+      navigation.getParent()?.navigate("Chat", {
+        screen: "ChatThread",
+        params: { channelId: channel.id },
+      });
+    } catch (openError) {
+      setChatError(openError instanceof Error ? openError.message : "Unable to open the patient thread.");
+    } finally {
+      setOpeningChat(false);
+    }
   };
 
   useEffect(() => {
@@ -195,6 +217,7 @@ export default function PatientDetailScreen({ route, navigation }: Props) {
         {toxicityAlertError ? (
           <Text className="text-clinical-danger text-xs mb-3">{toxicityAlertError}</Text>
         ) : null}
+        {chatError ? <Text className="mb-3 text-xs text-clinical-danger">{chatError}</Text> : null}
         {toxicityAlerts.map((alert) => (
           <View key={alert.id} className="bg-red-50 border border-red-300 rounded-lg p-4 mb-3">
             <Text className="text-sm font-semibold text-red-800">CTCAE toxicity alert</Text>
@@ -212,6 +235,21 @@ export default function PatientDetailScreen({ route, navigation }: Props) {
             ) : null}
           </View>
         ))}
+
+        <Pressable
+          onPress={() => void openTeamDiscussion()}
+          disabled={openingChat || profile?.credential_verified !== true || !profile.is_active}
+          accessibilityRole="button"
+          className={`mb-4 min-h-14 flex-row items-center justify-between rounded-lg border px-4 py-4 ${profile?.credential_verified && profile.is_active ? "border-clinical-primary bg-clinical-primary" : "border-gray-300 bg-gray-100"}`}
+        >
+          <Text className={`flex-1 text-sm font-semibold ${profile?.credential_verified && profile.is_active ? "text-white" : "text-gray-500"}`}>
+            {openingChat ? "Opening..." : "Team Discussion"}
+          </Text>
+          <Text className={`text-lg ${profile?.credential_verified && profile.is_active ? "text-white/70" : "text-gray-400"}`}>›</Text>
+        </Pressable>
+        {!profile?.credential_verified ? (
+          <Text className="mb-4 text-xs text-gray-500">Chat is available after credential verification.</Text>
+        ) : null}
 
         <Text className="text-sm font-semibold text-gray-600 mb-2">Patient workspace</Text>
         {featureLinks.map((feature) => (
